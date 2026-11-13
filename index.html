@@ -375,26 +375,24 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
 :root:not(.unsupported) .notice,
 .unsupported #controls { display: none; }
 
-.links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
-.unsupported .links { justify-content: center; }
-.links a {
+.header-actions { flex: none; display: flex; align-items: center; gap: .5rem; }
+#shareLink {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: .5rem;
-  height: 2.375rem;
-  padding: 0 1rem;
+  height: 2.25rem;
+  padding: 0 .875rem;
   border: 1px solid var(--line-strong);
-  border-radius: .75rem;
+  border-radius: .625rem;
   color: var(--text-2);
-  font-size: .9375rem;
+  font-size: .875rem;
   font-weight: 500;
   white-space: nowrap;
   text-decoration: none;
   transition: background-color 150ms var(--ease), color 150ms var(--ease);
 }
-.links a:hover { background: var(--field); color: var(--text); }
-.links .icon { width: 1rem; height: 1rem; }
+#shareLink:hover { background: var(--field); color: var(--text); }
+#shareLink .icon { width: 1rem; height: 1rem; }
 
 .log { display: flex; flex-direction: column; flex: 1 1 0; min-height: 18rem; overflow: hidden; border: 1px solid var(--line); border-radius: 1.25rem; background: var(--panel); }
 .log:has(#log:empty),
@@ -433,7 +431,13 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
   .options, .engine { flex: 1 1 100%; }
   .segmented { flex: 1; }
   .segmented label { flex: 1; }
-  .links a { flex: 1 1 8rem; height: 2.75rem; padding: 0 .75rem; }
+  #shareLink { padding: 0 .625rem; }
+  #shareLink span { display: none; }
+  header { display: grid; grid-template-columns: 1fr auto; align-items: center; }
+  hgroup { display: contents; }
+  h1 { grid-area: 1 / 1; }
+  .header-actions { grid-area: 1 / 2; }
+  hgroup p { grid-area: 2 / 1 / 3 / 3; }
   #log li { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -448,10 +452,13 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
       <h1><svg viewBox="0 0 64 64" aria-hidden="true"><rect x=".5" y=".5" width="63" height="63" rx="14" fill="#0b0b0c" stroke="#2c2c2f"/><rect x="12" y="34" width="40" height="7" rx="3.5" fill="#ffd84a"/><rect x="20" y="46" width="24" height="5" rx="2.5" fill="#a1a1a6"/></svg>Tolk</h1>
       <p data-i18n="tagline">画面の音声を同時翻訳</p>
     </hgroup>
-    <label class="ui-lang">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-      <select id="uiLang" aria-label="表示言語" data-i18n-label="uiLang"></select>
-    </label>
+    <div class="header-actions">
+      <a id="shareLink" aria-label="X で共有" data-i18n-label="share" href="https://x.com/intent/tweet?text=Tolk%EF%BD%9C%E7%94%BB%E9%9D%A2%E3%81%AE%E9%9F%B3%E5%A3%B0%E3%82%92%E5%90%8C%E6%99%82%E7%BF%BB%E8%A8%B3&amp;url=https%3A%2F%2Fnoxelwork.com%2Ftolk" target="_blank" rel="noopener noreferrer"><svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span data-i18n="share">X で共有</span></a>
+      <label class="ui-lang">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+        <select id="uiLang" aria-label="表示言語" data-i18n-label="uiLang"></select>
+      </label>
+    </div>
   </header>
 
   <div class="player">
@@ -518,10 +525,6 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
 
   <p class="notice"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg><span data-i18n="notice">パソコン版 Chrome の最新版で開いてください</span></p>
 
-  <nav class="links" aria-label="共有と作者" data-i18n-label="links">
-    <a id="shareLink" href="https://x.com/intent/tweet?text=Tolk%EF%BD%9C%E7%94%BB%E9%9D%A2%E3%81%AE%E9%9F%B3%E5%A3%B0%E3%82%92%E5%90%8C%E6%99%82%E7%BF%BB%E8%A8%B3&amp;url=https%3A%2F%2Fnoxelwork.com%2Ftolk" target="_blank" rel="noopener noreferrer"><svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span data-i18n="share">X で共有</span></a>
-    <a href="https://x.com/NoxelLab" target="_blank" rel="noopener noreferrer"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></svg><span data-i18n="follow">作者をフォロー</span></a>
-  </nav>
 
   <section class="log" aria-labelledby="logTitle">
     <div class="log-head">
@@ -577,8 +580,6 @@ const I18N = {
     unpop: 'タブに戻す',
     notice: 'パソコン版 Chrome の最新版で開いてください',
     share: 'X で共有',
-    follow: '作者をフォロー',
-    links: '共有と作者',
     history: '履歴',
     clear: '消す',
     sameLang: '話されている言語と字幕の言語を別々に選んでください',
@@ -640,8 +641,6 @@ const I18N = {
     unpop: 'Back to tab',
     notice: 'Open this page in the latest Chrome on a computer',
     share: 'Share on X',
-    follow: 'Follow the creator',
-    links: 'Share and follow',
     history: 'History',
     clear: 'Clear',
     sameLang: 'Choose different languages for speech and subtitles',
@@ -703,8 +702,6 @@ const I18N = {
     unpop: '返回标签页',
     notice: '请在电脑上用最新版 Chrome 打开',
     share: '分享到 X',
-    follow: '关注作者',
-    links: '分享与关注',
     history: '记录',
     clear: '清除',
     sameLang: '请为说话语言和字幕语言选择不同的语言',
@@ -766,8 +763,6 @@ const I18N = {
     unpop: '回到分頁',
     notice: '請在電腦上用最新版 Chrome 開啟',
     share: '分享到 X',
-    follow: '追蹤作者',
-    links: '分享與追蹤',
     history: '紀錄',
     clear: '清除',
     sameLang: '請為說話語言和字幕語言選擇不同的語言',
@@ -829,8 +824,6 @@ const I18N = {
     unpop: '탭으로 돌아가기',
     notice: '컴퓨터의 최신 Chrome에서 열어 주세요',
     share: 'X에 공유',
-    follow: '제작자 팔로우',
-    links: '공유 및 팔로우',
     history: '기록',
     clear: '지우기',
     sameLang: '말하는 언어와 자막 언어를 서로 다르게 선택해 주세요',
@@ -892,8 +885,6 @@ const I18N = {
     unpop: 'Volver a la pestaña',
     notice: 'Abre esta página en la última versión de Chrome en un ordenador',
     share: 'Compartir en X',
-    follow: 'Seguir al creador',
-    links: 'Compartir y seguir',
     history: 'Historial',
     clear: 'Borrar',
     sameLang: 'Elige idiomas distintos para la voz y los subtítulos',
@@ -955,8 +946,6 @@ const I18N = {
     unpop: 'Revenir à l’onglet',
     notice: 'Ouvrez cette page dans la dernière version de Chrome sur un ordinateur',
     share: 'Partager sur X',
-    follow: 'Suivre le créateur',
-    links: 'Partager et suivre',
     history: 'Historique',
     clear: 'Effacer',
     sameLang: 'Choisissez des langues différentes pour la voix et les sous-titres',
@@ -1018,8 +1007,6 @@ const I18N = {
     unpop: 'Zurück zum Tab',
     notice: 'Öffne diese Seite in der neuesten Chrome-Version auf einem Computer',
     share: 'Auf X teilen',
-    follow: 'Dem Ersteller folgen',
-    links: 'Teilen und folgen',
     history: 'Verlauf',
     clear: 'Löschen',
     sameLang: 'Wähle für Ton und Untertitel verschiedene Sprachen',
@@ -1081,8 +1068,6 @@ const I18N = {
     unpop: 'Torna alla scheda',
     notice: 'Apri questa pagina con l’ultima versione di Chrome su un computer',
     share: 'Condividi su X',
-    follow: 'Segui il creatore',
-    links: 'Condividi e segui',
     history: 'Cronologia',
     clear: 'Cancella',
     sameLang: 'Scegli lingue diverse per il parlato e i sottotitoli',
@@ -1144,8 +1129,6 @@ const I18N = {
     unpop: 'Voltar para a guia',
     notice: 'Abra esta página na versão mais recente do Chrome em um computador',
     share: 'Compartilhar no X',
-    follow: 'Seguir o criador',
-    links: 'Compartilhar e seguir',
     history: 'Histórico',
     clear: 'Limpar',
     sameLang: 'Escolha idiomas diferentes para a fala e as legendas',
@@ -1207,8 +1190,6 @@ const I18N = {
     unpop: 'Вернуть во вкладку',
     notice: 'Откройте эту страницу в последней версии Chrome на компьютере',
     share: 'Поделиться в X',
-    follow: 'Подписаться на автора',
-    links: 'Поделиться и подписаться',
     history: 'История',
     clear: 'Очистить',
     sameLang: 'Выберите разные языки для речи и субтитров',
@@ -1270,8 +1251,6 @@ const I18N = {
     unpop: 'टैब पर वापस लाएँ',
     notice: 'यह पेज कंप्यूटर पर Chrome के नए वर्ज़न में खोलें',
     share: 'X पर शेयर करें',
-    follow: 'बनाने वाले को फ़ॉलो करें',
-    links: 'शेयर और फ़ॉलो',
     history: 'इतिहास',
     clear: 'मिटाएँ',
     sameLang: 'बोली और सबटाइटल के लिए अलग-अलग भाषाएँ चुनें',
@@ -1333,8 +1312,6 @@ const I18N = {
     unpop: 'Kembali ke tab',
     notice: 'Buka halaman ini di Chrome versi terbaru pada komputer',
     share: 'Bagikan ke X',
-    follow: 'Ikuti pembuat',
-    links: 'Bagikan dan ikuti',
     history: 'Riwayat',
     clear: 'Hapus',
     sameLang: 'Pilih bahasa yang berbeda untuk ucapan dan subtitle',
@@ -1396,8 +1373,6 @@ const I18N = {
     unpop: 'Quay lại thẻ',
     notice: 'Hãy mở trang này bằng Chrome mới nhất trên máy tính',
     share: 'Chia sẻ lên X',
-    follow: 'Theo dõi tác giả',
-    links: 'Chia sẻ và theo dõi',
     history: 'Lịch sử',
     clear: 'Xóa',
     sameLang: 'Hãy chọn ngôn ngữ khác nhau cho lời nói và phụ đề',
@@ -1459,8 +1434,6 @@ const I18N = {
     unpop: 'กลับไปที่แท็บ',
     notice: 'เปิดหน้านี้ด้วย Chrome เวอร์ชันล่าสุดบนคอมพิวเตอร์',
     share: 'แชร์บน X',
-    follow: 'ติดตามผู้สร้าง',
-    links: 'แชร์และติดตาม',
     history: 'ประวัติ',
     clear: 'ล้าง',
     sameLang: 'เลือกภาษาที่พูดและภาษาคำบรรยายให้ต่างกัน',
@@ -1522,8 +1495,6 @@ const I18N = {
     unpop: 'العودة إلى علامة التبويب',
     notice: 'افتح هذه الصفحة في أحدث إصدار من Chrome على الكمبيوتر',
     share: 'مشاركة على X',
-    follow: 'تابع المطوّر',
-    links: 'المشاركة والمتابعة',
     history: 'السجل',
     clear: 'مسح',
     sameLang: 'اختر لغتين مختلفتين للكلام والترجمة النصية',
@@ -1585,8 +1556,6 @@ const I18N = {
     unpop: 'Sekmeye dön',
     notice: 'Bu sayfayı bilgisayarda Chrome’un en yeni sürümüyle açın',
     share: 'X’te paylaş',
-    follow: 'Geliştiriciyi takip et',
-    links: 'Paylaş ve takip et',
     history: 'Geçmiş',
     clear: 'Temizle',
     sameLang: 'Konuşma ve altyazı için farklı diller seçin',
@@ -1648,8 +1617,6 @@ const I18N = {
     unpop: 'Terug naar tabblad',
     notice: 'Open deze pagina in de nieuwste Chrome op een computer',
     share: 'Delen op X',
-    follow: 'Volg de maker',
-    links: 'Delen en volgen',
     history: 'Geschiedenis',
     clear: 'Wissen',
     sameLang: 'Kies verschillende talen voor spraak en ondertiteling',
@@ -1711,8 +1678,6 @@ const I18N = {
     unpop: 'Wróć do karty',
     notice: 'Otwórz tę stronę w najnowszym Chrome na komputerze',
     share: 'Udostępnij na X',
-    follow: 'Obserwuj twórcę',
-    links: 'Udostępnij i obserwuj',
     history: 'Historia',
     clear: 'Wyczyść',
     sameLang: 'Wybierz różne języki mowy i napisów',
@@ -1774,8 +1739,6 @@ const I18N = {
     unpop: 'Повернути у вкладку',
     notice: 'Відкрийте цю сторінку в найновішому Chrome на комп’ютері',
     share: 'Поширити в X',
-    follow: 'Стежити за автором',
-    links: 'Поширити й стежити',
     history: 'Історія',
     clear: 'Очистити',
     sameLang: 'Виберіть різні мови для мовлення і субтитрів',
