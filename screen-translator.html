@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>画面の音声を同時翻訳</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+:root {
+  --paper: #E9EDF2;
+  --field: #F7F9FB;
+  --ink: #1B2333;
+  --muted: #5E6880;
+  --line: #C9D1DD;
+  --screen: #171C2B;
+  --screen-text: #C7CEDD;
+  --subtitle: #FFD84A;
+  --live: #E5484D;
+  --error: #B4232A;
+  font-family: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, sans-serif;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--ink);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); }
+p, h1 { margin: 0; }
+button, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+main {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .25rem 1.5rem;
+}
+h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
+.lead { flex-basis: 100%; color: var(--muted); }
+
+#status { display: flex; align-items: center; gap: .5rem; font-size: .9375rem; }
+#status::before {
+  content: "";
+  flex: none;
+  width: .625rem;
+  height: .625rem;
+  border-radius: 50%;
+  background: var(--muted);
+}
+#status[data-state="busy"]::before { background: var(--ink); animation: pulse 1.2s ease-in-out infinite; }
+#status[data-state="live"]::before { background: var(--live); animation: pulse 1.6s ease-in-out infinite; }
+#status[data-state="error"] { color: var(--error); }
+#status[data-state="error"]::before { background: var(--error); }
+@keyframes pulse { 50% { opacity: .25; } }
+
+.notice {
+  padding: .75rem 1rem;
+  border: 2px solid var(--error);
+  border-radius: .5rem;
+  color: var(--error);
+}
+
+#controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: .75rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+#controls label { display: grid; gap: .25rem; font-size: .8125rem; color: var(--muted); }
+#controls select,
+#controls button {
+  height: 2.75rem;
+  padding: 0 .875rem;
+  border: 1.5px solid var(--ink);
+  border-radius: .5rem;
+  background: var(--field);
+  font-size: 1rem;
+  color: var(--ink);
+}
+#controls button { cursor: pointer; }
+#controls :disabled { opacity: .5; cursor: not-allowed; }
+#controls #swap { width: 2.75rem; padding: 0; }
+#controls #action { margin-left: auto; background: var(--subtitle); font-weight: 700; }
+#controls #action[data-running] { background: var(--field); }
+
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: .5rem;
+  min-height: clamp(14rem, 40vh, 24rem);
+  padding: 3.5rem 2rem 2.25rem;
+  border-radius: .75rem;
+  background: var(--screen);
+  color: var(--screen-text);
+  text-align: center;
+}
+.caption {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  text-wrap: balance;
+}
+#capTr {
+  max-height: 4.2em;
+  font-size: clamp(1.375rem, 3.2vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--subtitle);
+  text-shadow: 0 2px 0 rgb(0 0 0 / .55);
+  transition: opacity .2s;
+}
+#capTr.stale { opacity: .55; }
+#capSrc { max-height: 3.2em; font-size: 1rem; }
+#hint { margin: auto; max-width: 30rem; }
+#pop {
+  position: absolute;
+  top: .75rem;
+  right: .75rem;
+  padding: .25rem .75rem;
+  border: 1px solid rgb(255 255 255 / .35);
+  border-radius: .5rem;
+  background: none;
+  font-size: .8125rem;
+  color: var(--screen-text);
+  cursor: pointer;
+}
+#pop:focus-visible { outline-color: var(--subtitle); }
+
+.pip { background: var(--screen); }
+.pip .stage { min-height: 100vh; padding: 1rem 1.25rem 1.25rem; border-radius: 0; }
+.pip #pop { display: none; }
+
+.log { border-top: 2px solid var(--ink); }
+.log:has(#log:empty) { display: none; }
+.log-head, #log li { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem 1.5rem; }
+.log-head { align-items: center; padding: .5rem 0; font-size: .8125rem; color: var(--muted); }
+.log-head div { display: flex; align-items: center; justify-content: space-between; }
+#clear { padding: .125rem .625rem; border: 1px solid var(--muted); border-radius: .375rem; background: none; cursor: pointer; }
+#log { max-height: 22rem; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+#log li { padding: .625rem 0; border-top: 1px solid var(--line); }
+#log li p:first-child { color: var(--muted); }
+
+@media (max-width: 40rem) {
+  #action { margin-left: 0; flex: 1 1 100%; }
+  .log-head, #log li { grid-template-columns: 1fr; }
+  .log-head span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #status::before { animation: none !important; }
+  #capTr { transition: none; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>画面の音声を同時翻訳</h1>
+    <p id="status" role="status" data-state="idle"></p>
+    <p class="lead">共有した画面やタブの音声を聞き取り、字幕にして訳します。</p>
+  </header>
+
+  <p id="unsupported" class="notice" hidden>このブラウザでは動きません。デスクトップ版 Chrome の最新版で、http://localhost または https のページとして開いてください。</p>
+
+  <fieldset id="controls">
+    <label>話されている言語<select id="src"></select></label>
+    <button id="swap" type="button" aria-label="言語を入れ替える">⇄</button>
+    <label>字幕の言語<select id="tgt"></select></label>
+    <label>音声認識
+      <select id="engine">
+        <option value="local">端末内(外部に送信しない)</option>
+        <option value="cloud">クラウド(音声を Google に送信)</option>
+      </select>
+    </label>
+    <button id="action" type="button">画面を選んで翻訳を始める</button>
+  </fieldset>
+
+  <div id="stageHome">
+    <section id="stage" class="stage" aria-label="字幕">
+      <button id="pop" type="button" hidden>字幕を小窓に出す</button>
+      <p id="hint">画面を選ぶと、ここに字幕が出ます。共有ダイアログでは「音声も共有する」をオンにしてください。</p>
+      <p id="capTr" class="caption" dir="auto"></p>
+      <p id="capSrc" class="caption" dir="auto"></p>
+    </section>
+  </div>
+
+  <section class="log" aria-label="翻訳の履歴">
+    <div class="log-head">
+      <span>原文</span>
+      <div><span>訳文</span><button id="clear" type="button">履歴を消す</button></div>
+    </div>
+    <ol id="log"></ol>
+  </section>
+</main>
+
+<script type="module">
+const LOCALES = new Map([
+  ['en', 'en-US'], ['ja', 'ja-JP'], ['zh', 'zh-CN'], ['zh-Hant', 'zh-TW'], ['ko', 'ko-KR'],
+  ['es', 'es-ES'], ['fr', 'fr-FR'], ['de', 'de-DE'], ['it', 'it-IT'], ['pt', 'pt-BR'],
+  ['ru', 'ru-RU'], ['hi', 'hi-IN'], ['id', 'id-ID'], ['vi', 'vi-VN'], ['th', 'th-TH'],
+  ['ar', 'ar-SA'], ['tr', 'tr-TR'], ['nl', 'nl-NL'], ['pl', 'pl-PL'], ['uk', 'uk-UA'],
+]);
+const FATAL_ERRORS = {
+  'not-allowed': '音声認識が許可されていません。',
+  'service-not-allowed': 'この音声認識は使えません。音声認識の方式を切り替えてください。',
+  'language-not-supported': 'この言語の音声認識には対応していません。',
+  'audio-capture': '共有した画面から音声を取得できませんでした。',
+};
+const STORAGE_KEY = 'screen-translator.v2';
+const RESTART_DELAY_MS = 250;
+const MAX_NETWORK_ERRORS = 5;
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const $ = (id) => document.getElementById(id);
+const srcSel = $('src'), tgtSel = $('tgt'), engineSel = $('engine');
+const swapBtn = $('swap'), actionBtn = $('action'), popBtn = $('pop'), clearBtn = $('clear');
+const statusEl = $('status'), stage = $('stage'), stageHome = $('stageHome');
+const hint = $('hint'), capTr = $('capTr'), capSrc = $('capSrc'), logEl = $('log');
+
+let translator = null;
+let stream = null;
+let recognition = null;
+let running = false;
+let busy = false;
+let blocked = false;
+let pendingStep = null; // 'translator' | 'speech' | null
+let checkId = 0;
+let networkErrors = 0;
+
+const finals = [];
+let interim = null;
+let translating = false;
+let finalCount = 0;
+let interimActive = false;
+
+const pair = () => ({ sourceLanguage: srcSel.value, targetLanguage: tgtSel.value });
+const locale = () => LOCALES.get(srcSel.value);
+
+function setStatus(state, text) {
+  statusEl.dataset.state = state;
+  statusEl.textContent = text;
+}
+
+function renderAction() {
+  actionBtn.textContent = running ? '翻訳を止める'
+    : pendingStep === 'translator' ? '翻訳モデルを準備する'
+    : pendingStep === 'speech' ? '音声認識パックを準備する'
+    : '画面を選んで翻訳を始める';
+  actionBtn.toggleAttribute('data-running', running);
+  actionBtn.disabled = busy || blocked;
+  for (const el of [srcSel, tgtSel, engineSel, swapBtn]) el.disabled = running || busy;
+}
+
+async function check() {
+  const id = ++checkId;
+  pendingStep = null;
+  blocked = true;
+  renderAction();
+
+  let problem = null;
+  if (srcSel.value === tgtSel.value) {
+    problem = '話されている言語と字幕の言語を別々に選んでください。';
+  } else {
+    try {
+      const translation = translator ? 'available' : await Translator.availability(pair());
+      const speech = engineSel.value === 'local'
+        ? await SR.available({ langs: [locale()], processLocally: true })
+        : 'available';
+      if (id !== checkId) return;
+      if (translation === 'unavailable') problem = 'この言語の組み合わせは翻訳できません。';
+      else if (speech === 'unavailable') problem = 'この言語は端末内の音声認識に対応していません。クラウドに切り替えてください。';
+      else pendingStep = translation !== 'available' ? 'translator' : speech !== 'available' ? 'speech' : null;
+    } catch (e) {
+      if (id !== checkId) return;
+      problem = `対応状況を確認できませんでした(${e.message})`;
+    }
+  }
+
+  blocked = Boolean(problem);
+  if (problem) setStatus('error', problem);
+  else setStatus('idle', pendingStep ? '初回のみモデルのダウンロードが必要です。' : '準備ができました。');
+  renderAction();
+}
+
+async function prepare() {
+  busy = true;
+  renderAction();
+  try {
+    if (pendingStep === 'translator') {
+      setStatus('busy', '翻訳モデルを準備中');
+      translator = await Translator.create({
+        ...pair(),
+        monitor(m) {
+          m.addEventListener('downloadprogress', (e) => {
+            setStatus('busy', `翻訳モデルをダウンロード中 ${Math.round(e.loaded * 100)}%`);
+          });
+        },
+      });
+    } else {
+      setStatus('busy', '音声認識パックをダウンロード中');
+      const installed = await SR.install({ langs: [locale()], processLocally: true });
+      if (!installed) throw new Error('音声認識パックを入手できませんでした');
+    }
+  } catch (e) {
+    busy = false;
+    setStatus('error', `準備に失敗しました(${e.message})`);
+    renderAction();
+    return;
+  }
+  busy = false;
+  await check();
+}
+
+async function start() {
+  busy = true;
+  renderAction();
+  try {
+    stream = await navigator.mediaDevices.getDisplayMedia({
+      video: true,
+      audio: true,
+      systemAudio: 'include',
+      selfBrowserSurface: 'exclude',
+    });
+  } catch (e) {
+    if (e.name === 'NotAllowedError') stop('画面の共有をキャンセルしました。');
+    else stop(`画面を共有できませんでした(${e.message})`, 'error');
+    return;
+  }
+
+  const [track] = stream.getAudioTracks();
+  if (!track) {
+    stop('音声が共有されていません。共有ダイアログで「音声も共有する」をオンにして選び直してください。', 'error');
+    return;
+  }
+  stream.getVideoTracks().forEach((t) => t.stop());
+  track.addEventListener('ended', () => stop('画面の共有が終わりました。'));
+
+  try {
+    translator ??= await Translator.create(pair());
+  } catch (e) {
+    stop(`翻訳モデルを読み込めませんでした(${e.message})`, 'error');
+    return;
+  }
+  if (!stream) return;
+
+  busy = false;
+  running = true;
+  networkErrors = 0;
+  hint.hidden = true;
+  setStatus('live', '認識中');
+  renderAction();
+  listen(track);
+}
+
+function stop(text = '翻訳を止めました。', state = 'idle') {
+  running = false;
+  busy = false;
+  recognition?.stop();
+  recognition = null;
+  stream?.getTracks().forEach((t) => t.stop());
+  stream = null;
+  setStatus(state, text);
+  renderAction();
+}
+
+function listen(track) {
+  const rec = new SR();
+  recognition = rec;
+  rec.lang = locale();
+  rec.continuous = true;
+  rec.interimResults = true;
+  if (engineSel.value === 'local') rec.processLocally = true;
+
+  const begin = () => {
+    if (!running || recognition !== rec) return;
+    try {
+      rec.start(track);
+    } catch (e) {
+      stop(`音声認識を始められませんでした(${e.message})`, 'error');
+    }
+  };
+
+  rec.onresult = (e) => {
+    networkErrors = 0;
+    let text = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const result = e.results[i];
+      if (result.isFinal) commit(result[0].transcript.trim());
+      else text += result[0].transcript;
+    }
+    showInterim(text.trim());
+  };
+  rec.onerror = (e) => {
+    if (FATAL_ERRORS[e.error]) stop(FATAL_ERRORS[e.error], 'error');
+    else if (e.error === 'network' && ++networkErrors >= MAX_NETWORK_ERRORS) {
+      stop('音声認識サービスに接続できません。ネットワークを確認するか、端末内の音声認識に切り替えてください。', 'error');
+    }
+  };
+  rec.onend = () => setTimeout(begin, RESTART_DELAY_MS);
+
+  begin();
+}
+
+function commit(text) {
+  if (!text) return;
+  const id = ++finalCount;
+  interimActive = false;
+  interim = null;
+
+  const item = document.createElement('li');
+  const source = document.createElement('p');
+  const translated = document.createElement('p');
+  source.dir = translated.dir = 'auto';
+  source.textContent = text;
+  translated.textContent = '…';
+  item.append(source, translated);
+  const pinned = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 40;
+  logEl.append(item);
+  if (pinned) logEl.scrollTop = logEl.scrollHeight;
+
+  capSrc.textContent = text;
+  capTr.classList.add('stale');
+  finals.push({
+    text,
+    done(out) {
+      translated.textContent = out;
+      if (id === finalCount && !interimActive) showCaption(out);
+    },
+  });
+  pump();
+}
+
+function showInterim(text) {
+  if (!text) return;
+  const generation = finalCount;
+  interimActive = true;
+  capSrc.textContent = text;
+  capTr.classList.add('stale');
+  interim = {
+    text,
+    done(out) {
+      if (interimActive && generation === finalCount) showCaption(out);
+    },
+  };
+  pump();
+}
+
+function showCaption(text) {
+  capTr.textContent = text;
+  capTr.classList.remove('stale');
+}
+
+async function pump() {
+  if (translating) return;
+  translating = true;
+  while (finals.length || interim) {
+    const job = finals.shift() ?? interim;
+    if (job === interim) interim = null;
+    try {
+      job.done(await translator.translate(job.text));
+    } catch {
+      job.done('(翻訳できませんでした)');
+    }
+  }
+  translating = false;
+}
+
+function languageChanged() {
+  translator?.destroy();
+  translator = null;
+  capTr.lang = tgtSel.value;
+  savePrefs();
+  check();
+}
+
+function loadPrefs() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? {};
+  } catch {
+    return {};
+  }
+}
+
+function savePrefs() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ src: srcSel.value, tgt: tgtSel.value, engine: engineSel.value }));
+  } catch {}
+}
+
+function initControls() {
+  const names = new Intl.DisplayNames(['ja'], { type: 'language' });
+  for (const sel of [srcSel, tgtSel]) {
+    for (const code of LOCALES.keys()) sel.add(new Option(names.of(code), code));
+  }
+  const prefs = loadPrefs();
+  const own = navigator.language.split('-')[0];
+  const defaultTgt = LOCALES.has(own) ? own : 'en';
+  tgtSel.value = LOCALES.has(prefs.tgt) ? prefs.tgt : defaultTgt;
+  srcSel.value = LOCALES.has(prefs.src) ? prefs.src : tgtSel.value === 'en' ? 'ja' : 'en';
+  capTr.lang = tgtSel.value;
+
+  const localOption = engineSel.querySelector('[value="local"]');
+  localOption.disabled = !SR.available;
+  if (localOption.disabled || prefs.engine === 'cloud') engineSel.value = 'cloud';
+}
+
+async function popOut() {
+  try {
+    const pip = await documentPictureInPicture.requestWindow({ width: 640, height: 200 });
+    pip.document.documentElement.lang = 'ja';
+    pip.document.head.append(
+      ...[...document.querySelectorAll('style, link[rel="stylesheet"]')].map((node) => node.cloneNode(true)),
+    );
+    pip.document.body.className = 'pip';
+    pip.document.body.append(stage);
+    pip.addEventListener('pagehide', () => stageHome.append(stage));
+  } catch (e) {
+    setStatus('error', `小窓を開けませんでした(${e.message})`);
+  }
+}
+
+if (!SR || !('Translator' in self) || !navigator.mediaDevices?.getDisplayMedia) {
+  $('unsupported').hidden = false;
+  $('controls').disabled = true;
+} else {
+  initControls();
+  actionBtn.addEventListener('click', () => (running ? stop() : pendingStep ? prepare() : start()));
+  srcSel.addEventListener('change', languageChanged);
+  tgtSel.addEventListener('change', languageChanged);
+  engineSel.addEventListener('change', () => { savePrefs(); check(); });
+  swapBtn.addEventListener('click', () => {
+    [srcSel.value, tgtSel.value] = [tgtSel.value, srcSel.value];
+    languageChanged();
+  });
+  clearBtn.addEventListener('click', () => logEl.replaceChildren());
+  if ('documentPictureInPicture' in window) {
+    popBtn.hidden = false;
+    popBtn.addEventListener('click', popOut);
+  }
+  check();
+}
+</script>
+</body>
+</html>
