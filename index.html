@@ -272,8 +272,9 @@ const MAX_NETWORK_ERRORS = 5;
 const MAX_SOURCE_LINES = 2;
 const MAX_CAPTION_LINES = 2;
 const MIN_HOLD_MS = 1500;
-const MAX_HOLD_MS = 5000;
+const MAX_HOLD_MS = 8000;
 const HOLD_PER_WORD_MS = 280;
+const MAX_LAG_MS = 8000;
 const BREAK_AFTER = /^[、。，．,.!?！？;；:：]+$/;
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -297,6 +298,7 @@ const finals = [];
 let translating = false;
 let liveSrc = null;
 const captions = [];
+let captionRest = '';
 let captionTimer = null;
 let holdUntil = 0;
 
@@ -514,22 +516,23 @@ function queueCaption(text) {
   scheduleCaption();
 }
 
+const readTime = (text) => [...wordsOf(text)].filter((s) => s.isWordLike).length * HOLD_PER_WORD_MS;
+
 function scheduleCaption() {
-  if (captionTimer || !captions.length) return;
+  if (captionTimer || !(captionRest || captions.length)) return;
   captionTimer = setTimeout(showCaption, Math.max(0, holdUntil - Date.now()));
 }
 
 function showCaption() {
   captionTimer = null;
-  const [chunk, rest] = splitCaption(captions.shift());
-  if (rest) captions.unshift(rest);
+  while (captions.length > 1 && readTime(`${captionRest} ${captions.join(' ')}`) > MAX_LAG_MS) captions.shift();
+  const [chunk, rest] = splitCaption(captionRest || captions.shift());
+  captionRest = rest;
   const line = document.createElement('p');
   line.dir = 'auto';
   line.textContent = chunk;
   capTr.replaceChildren(line);
-  const words = [...wordsOf(chunk)].filter((s) => s.isWordLike).length;
-  const hold = captions.length > 2 ? MIN_HOLD_MS : Math.min(MAX_HOLD_MS, Math.max(MIN_HOLD_MS, words * HOLD_PER_WORD_MS));
-  holdUntil = Date.now() + hold;
+  holdUntil = Date.now() + Math.min(MAX_HOLD_MS, Math.max(MIN_HOLD_MS, readTime(chunk)));
   scheduleCaption();
 }
 
