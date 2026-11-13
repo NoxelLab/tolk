@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tolk｜画面の音声を同時翻訳</title>
 <meta name="description" content="共有した画面やタブの音声を聞き取り、字幕にして訳します。">
-<meta name="theme-color" content="#0e0e10">
+<meta name="theme-color" content="#0c0c0e">
 <link rel="canonical" href="https://noxelwork.com/tolk">
 <link rel="icon" href="/tolk/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
@@ -30,33 +30,33 @@ if (!(window.SpeechRecognition || window.webkitSpeechRecognition) || !('Translat
 <style>
 :root {
   color-scheme: dark;
-  --page: #0e0e10;
-  --panel: #161618;
-  --field: #1f1f23;
-  --field-hover: #29292e;
-  --screen: #060607;
-  --line: rgb(255 255 255 / .07);
-  --line-strong: rgb(255 255 255 / .13);
-  --text: #f4f4f5;
-  --text-2: #b4b4bc;
-  --muted: #8b8b94;
+  --page: #0c0c0e;
+  --panel: #18181b;
+  --field: #26262b;
+  --field-hover: #303036;
+  --screen: #050506;
+  --line: rgb(255 255 255 / .1);
+  --line-strong: rgb(255 255 255 / .2);
+  --text: #fafafa;
+  --text-2: #d4d4d8;
+  --muted: #a9a9b1;
   --brand: #ffd84a;
   --brand-hover: #ffe27d;
   --on-brand: #1c1600;
-  --live: #ff4d4f;
-  --danger: #ff8a8c;
+  --live: #ff5c5e;
+  --danger: #ff9b9d;
   --ease: cubic-bezier(.22, 1, .36, 1);
   font-family: "IBM Plex Sans JP", system-ui, sans-serif;
   line-height: 1.6;
   color: var(--text);
 }
+:lang(zh), :lang(ko), :lang(vi), :lang(th), :lang(hi), :lang(ar) { font-family: system-ui, sans-serif; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body { margin: 0; background: var(--page); }
 p, h1, h2 { margin: 0; }
 button, select, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
-:lang(zh) { font-family: system-ui, sans-serif; }
 :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .icon { flex: none; width: 1.125rem; height: 1.125rem; }
 
@@ -71,11 +71,30 @@ main {
 }
 .unsupported main { max-width: 46rem; }
 
-header { display: flex; align-items: center; min-height: 2.5rem; }
-hgroup { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem 1rem; }
+header { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem 1rem; }
+hgroup { flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: .25rem 1rem; min-width: 0; min-height: 2.25rem; }
 h1 { display: flex; align-items: center; gap: .625rem; font-size: 1.5rem; font-weight: 600; line-height: 1.2; letter-spacing: -.01em; }
 h1 svg { flex: none; width: 2rem; height: 2rem; }
-hgroup p { font-size: .9375rem; color: var(--text-2); }
+hgroup p { font-size: 1rem; color: var(--text-2); }
+.ui-lang { position: relative; flex: none; display: flex; align-items: center; color: var(--text-2); transition: color 150ms var(--ease); }
+.ui-lang:hover { color: var(--text); }
+.ui-lang .icon { position: absolute; inset-inline-start: .75rem; width: 1rem; height: 1rem; pointer-events: none; }
+.ui-lang select {
+  field-sizing: content;
+  height: 2.25rem;
+  padding-block: 0;
+  padding-inline: 2.25rem;
+  border: 1px solid var(--line-strong);
+  border-radius: .625rem;
+  appearance: none;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a9a9b1' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right .75rem center / .875rem;
+  font-size: .875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 150ms var(--ease);
+}
+.ui-lang select:hover { background-color: var(--field); }
+[dir="rtl"] .ui-lang select { background-position: left .75rem center; }
 
 .player {
   display: grid;
@@ -84,7 +103,7 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
   border: 1px solid var(--line);
   border-radius: 1.25rem;
   background: var(--panel);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / .04), 0 32px 64px -32px rgb(0 0 0 / .8);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .05), 0 32px 64px -32px rgb(0 0 0 / .8);
 }
 
 #controls {
@@ -98,24 +117,26 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
   padding: 0;
   border: 0;
 }
-#controls:disabled > * { opacity: .45; }
+#controls:disabled > * { opacity: .6; }
 #controls:disabled * { cursor: not-allowed; }
 .langs { display: flex; align-items: center; gap: .375rem; flex: 1 1 24rem; max-width: 36rem; min-width: 0; }
 .langs select {
   flex: 1 1 0;
   min-width: 0;
   height: 2.75rem;
-  padding: 0 2.5rem 0 1rem;
-  border: 1px solid var(--line);
+  padding-block: 0;
+  padding-inline: 1rem 2.5rem;
+  border: 1px solid var(--line-strong);
   border-radius: .75rem;
   appearance: none;
-  background: var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b8b94' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right .875rem center / 1rem;
-  font-size: .9375rem;
+  background: var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a9a9b1' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right .875rem center / 1rem;
+  font-size: 1rem;
   font-weight: 500;
   text-overflow: ellipsis;
   cursor: pointer;
   transition: background-color 150ms var(--ease);
 }
+[dir="rtl"] .langs select { background-position: left .875rem center; }
 .langs select:hover:not(:disabled) { background-color: var(--field-hover); }
 #swap {
   flex: none;
@@ -134,8 +155,8 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
 #swap svg { transition: transform 350ms var(--ease); }
 #swap[data-flip] svg { transform: rotate(180deg); }
 .engine { display: flex; align-items: center; gap: .75rem; }
-.engine > span { font-size: .8125rem; color: var(--muted); white-space: nowrap; }
-.segmented { display: flex; gap: .25rem; padding: .25rem; border: 1px solid var(--line); border-radius: .75rem; background: var(--field); }
+.engine > span { font-size: .875rem; color: var(--muted); white-space: nowrap; }
+.segmented { display: flex; gap: .25rem; padding: .25rem; border: 1px solid var(--line-strong); border-radius: .75rem; background: var(--field); }
 .segmented label {
   position: relative;
   display: flex;
@@ -145,7 +166,7 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
   height: 2.125rem;
   padding: 0 .875rem;
   border-radius: .5rem;
-  font-size: .875rem;
+  font-size: .9375rem;
   font-weight: 500;
   color: var(--text-2);
   white-space: nowrap;
@@ -154,9 +175,9 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
 }
 .segmented label:hover { color: var(--text); }
 .segmented input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: inherit; }
-.segmented label:has(:checked) { background: #303036; color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / .4), inset 0 0 0 1px rgb(255 255 255 / .06); }
+.segmented label:has(:checked) { background: #3f3f46; color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / .45), inset 0 0 0 1px rgb(255 255 255 / .08); }
 .segmented label:has(:focus-visible) { outline: 2px solid var(--brand); outline-offset: 2px; }
-.segmented label:has(:disabled) { opacity: .4; cursor: not-allowed; }
+.segmented label:has(:disabled) { opacity: .45; cursor: not-allowed; }
 .segmented .icon { width: 1rem; height: 1rem; }
 
 .stage {
@@ -174,7 +195,7 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
   overflow: hidden;
   border-radius: .875rem;
   background: radial-gradient(90% 60% at 50% 0%, rgb(255 255 255 / .04), transparent 70%), var(--screen);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .1);
   text-align: center;
   container-type: inline-size;
 }
@@ -211,23 +232,26 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
 }
 #action:hover:not(:disabled) { background: var(--brand-hover); }
 #action:active:not(:disabled) { transform: translateY(1px) scale(.99); }
-#action:disabled { background: var(--field); color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); cursor: not-allowed; }
+#action:disabled { background: var(--field); color: var(--muted); box-shadow: inset 0 0 0 1px var(--line-strong); cursor: not-allowed; }
 .stage:is([data-view="download"], [data-view="starting"]) > #action:disabled { color: var(--text); cursor: progress; }
 #action > :not(.fill) { position: relative; }
+#actionLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #action :is(.i-share, .i-download, .spinner) { display: none; }
 #action[data-icon="share"] .i-share,
 #action[data-icon="download"] .i-download,
 #action[data-icon="spin"] .spinner { display: block; }
-#action .fill { position: absolute; inset: 0 auto 0 0; width: calc(var(--progress, 0) * 100%); background: rgb(255 216 74 / .24); transition: width 300ms var(--ease); }
+#action .fill { position: absolute; inset-block: 0; inset-inline-start: 0; width: calc(var(--progress, 0) * 100%); background: rgb(255 216 74 / .28); transition: width 300ms var(--ease); }
 .stage:not([data-view="download"]) > #action .fill { display: none; }
 #action.indeterminate .fill { width: 35%; animation: sweep 1.4s var(--ease) infinite; }
+[dir="rtl"] #action.indeterminate .fill { animation-name: sweep-rtl; }
 @keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+@keyframes sweep-rtl { from { transform: translateX(100%); } to { transform: translateX(-300%); } }
 .spinner { width: 1rem; height: 1rem; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 800ms linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-#status { max-width: 36rem; font-size: .9375rem; color: var(--text-2); text-wrap: pretty; }
+#status { max-width: 36rem; font-size: 1rem; color: var(--text-2); text-wrap: pretty; }
 #status:empty { display: none; }
-#status[data-state="error"] { display: flex; gap: .5rem; color: var(--danger); text-align: left; }
+#status[data-state="error"] { display: flex; gap: .5rem; color: var(--danger); text-align: start; }
 #status[data-state="error"]::before {
   content: "";
   flex: none;
@@ -246,11 +270,11 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
   clip-path: inset(50%);
   white-space: nowrap;
 }
-#hint { align-items: center; gap: .625rem; max-width: 36rem; font-size: .9375rem; color: var(--text-2); text-wrap: pretty; }
+#hint { align-items: center; gap: .625rem; max-width: 36rem; font-size: 1rem; color: var(--text-2); text-wrap: pretty; }
 .stage[data-view="starting"] > #hint { color: var(--text); }
 .switch { position: relative; flex: none; width: 1.875rem; height: 1.125rem; border-radius: 999px; background: var(--brand); }
-.switch::after { content: ""; position: absolute; top: .1875rem; right: .1875rem; width: .75rem; height: .75rem; border-radius: 50%; background: var(--on-brand); }
-#cloudNote { align-items: center; gap: .5rem; font-size: .875rem; color: var(--muted); }
+.switch::after { content: ""; position: absolute; top: .1875rem; inset-inline-end: .1875rem; width: .75rem; height: .75rem; border-radius: 50%; background: var(--on-brand); }
+#cloudNote { align-items: center; gap: .5rem; font-size: .9375rem; color: var(--muted); }
 #cloudNote .icon { width: 1rem; height: 1rem; }
 
 .bar { position: absolute; inset: 0 0 auto; align-items: center; justify-content: space-between; gap: .75rem; padding: .75rem; }
@@ -259,19 +283,19 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
   align-items: center;
   gap: .5rem;
   height: 2.25rem;
-  padding: 0 .875rem 0 .75rem;
+  padding-inline: .75rem .875rem;
   border-radius: 999px;
-  background: rgb(255 77 79 / .12);
-  color: #ffc9ca;
-  font-size: .8125rem;
+  background: rgb(255 92 94 / .16);
+  color: #ffd6d7;
+  font-size: .875rem;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .live .dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--live); animation: beat 1.6s ease-out infinite; }
-@keyframes beat { from { box-shadow: 0 0 0 0 rgb(255 77 79 / .6); } to { box-shadow: 0 0 0 .5rem rgb(255 77 79 / 0); } }
-#clock { color: rgb(255 255 255 / .7); }
-.meter { display: flex; align-items: center; gap: 2px; height: .875rem; margin-left: .125rem; }
+@keyframes beat { from { box-shadow: 0 0 0 0 rgb(255 92 94 / .6); } to { box-shadow: 0 0 0 .5rem rgb(255 92 94 / 0); } }
+#clock { color: rgb(255 255 255 / .8); }
+.meter { display: flex; align-items: center; gap: 2px; height: .875rem; margin-inline-start: .125rem; }
 .meter i { width: 3px; height: 100%; border-radius: 2px; background: currentColor; transform: scaleY(calc(.35 + var(--level, 0) * var(--k))); transition: transform 80ms linear; }
 .meter i:nth-child(1) { --k: .4; }
 .meter i:nth-child(2) { --k: .65; }
@@ -287,14 +311,14 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
   padding: 0 .875rem;
   border: 1px solid var(--line-strong);
   border-radius: .625rem;
-  background: rgb(255 255 255 / .06);
-  font-size: .875rem;
+  background: rgb(255 255 255 / .08);
+  font-size: .9375rem;
   font-weight: 500;
   white-space: nowrap;
   transition: background-color 150ms var(--ease);
 }
 .bar button:hover,
-.pip-note button:hover { background: rgb(255 255 255 / .11); }
+.pip-note button:hover { background: rgb(255 255 255 / .14); }
 #pop { border-color: transparent; background: var(--brand); color: var(--on-brand); }
 #pop:hover { background: var(--brand-hover); }
 .bar .icon,
@@ -306,11 +330,11 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
   .bar button span { display: none; }
 }
 
-#waiting { color: var(--muted); font-size: .9375rem; animation: breathe 2.4s ease-in-out infinite; }
-@keyframes breathe { 50% { opacity: .45; } }
+#waiting { color: var(--muted); font-size: 1rem; animation: breathe 2.4s ease-in-out infinite; }
+@keyframes breathe { 50% { opacity: .5; } }
 .caption { flex-direction: column; justify-content: flex-end; align-self: stretch; overflow: hidden; }
 .tr { font-size: clamp(1.375rem, 3.4cqi, 2.5rem); font-weight: 600; line-height: 1.4; color: var(--brand); text-shadow: 0 2px 6px rgb(0 0 0 / .6); text-wrap: balance; }
-.src { font-size: clamp(.9375rem, 1.7cqi, 1.1875rem); line-height: 1.6; color: var(--text-2); }
+.src { font-size: clamp(1rem, 1.7cqi, 1.25rem); line-height: 1.6; color: var(--text-2); }
 .stage[data-view="live"] { gap: .25rem; }
 #capTr { min-height: 2.8em; }
 #capTr p { animation: appear 220ms var(--ease); }
@@ -330,7 +354,7 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
   padding: 2rem;
   border-radius: .875rem;
   background: var(--screen);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .1);
   color: var(--text-2);
   text-align: center;
 }
@@ -339,17 +363,17 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
 .pip { background: #000; }
 .pip .stage { height: 100vh; aspect-ratio: auto; min-height: 0; max-height: none; padding: .875rem 1.25rem; border-radius: 0; background: #000; box-shadow: none; container-type: size; }
 .pip .tr { font-size: clamp(1.125rem, min(5cqi, 18cqb), 4rem); }
-.pip .src { font-size: clamp(.8125rem, min(2.2cqi, 7cqb), 1.375rem); }
+.pip .src { font-size: clamp(.875rem, min(2.2cqi, 7cqb), 1.375rem); }
 .pip .bar { background: linear-gradient(rgb(0 0 0 / .85), rgb(0 0 0 / 0)); opacity: 0; transition: opacity 200ms var(--ease); }
 .pip .stage:hover > .bar,
 .pip .bar:focus-within { opacity: 1; }
 
-.notice { font-size: .9375rem; text-align: center; text-wrap: balance; }
-.notice .icon { margin-right: .5rem; vertical-align: -.2em; color: var(--text-2); }
+.notice { font-size: 1rem; text-align: center; text-wrap: balance; }
+.notice .icon { margin-inline-end: .5rem; vertical-align: -.2em; color: var(--text-2); }
 :root:not(.unsupported) .notice,
 .unsupported #controls { display: none; }
 
-.links { display: flex; justify-content: flex-end; gap: .5rem; }
+.links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
 .unsupported .links { justify-content: center; }
 .links a {
   display: inline-flex;
@@ -358,11 +382,12 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
   gap: .5rem;
   height: 2.375rem;
   padding: 0 1rem;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: .75rem;
   color: var(--text-2);
-  font-size: .875rem;
+  font-size: .9375rem;
   font-weight: 500;
+  white-space: nowrap;
   text-decoration: none;
   transition: background-color 150ms var(--ease), color 150ms var(--ease);
 }
@@ -372,21 +397,21 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
 .log { display: flex; flex-direction: column; flex: 1 1 0; min-height: 18rem; overflow: hidden; border: 1px solid var(--line); border-radius: 1.25rem; background: var(--panel); }
 .log:has(#log:empty),
 .unsupported .log { display: none; }
-.log-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem .75rem .75rem 1.25rem; border-bottom: 1px solid var(--line); }
-.log h2 { font-size: .9375rem; font-weight: 600; }
+.log-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-block: .75rem; padding-inline: 1.25rem .75rem; border-bottom: 1px solid var(--line); }
+.log h2 { font-size: 1rem; font-weight: 600; }
 #clear {
   height: 2rem;
   padding: 0 .875rem;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: .5rem;
   background: none;
-  font-size: .8125rem;
+  font-size: .875rem;
   color: var(--text-2);
   transition: background-color 150ms var(--ease), color 150ms var(--ease);
 }
 #clear:hover { background: var(--field); color: var(--text); }
 #log { flex: 1; min-height: 0; margin: 0; padding: 0 1.25rem; overflow-y: auto; list-style: none; }
-#log li { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem 2rem; padding: .875rem 0; border-top: 1px solid var(--line); font-size: .9375rem; line-height: 1.7; }
+#log li { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem 2rem; padding: .875rem 0; border-top: 1px solid var(--line); font-size: 1rem; line-height: 1.7; }
 #log li:first-child { border-top: 0; }
 #log li p:first-child { color: var(--text-2); }
 .pending::after { content: "・"; color: var(--muted); animation: dots 1.2s steps(1) infinite; }
@@ -400,13 +425,13 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
 @media (max-width: 40rem) {
   h1 { font-size: 1.375rem; }
   h1 svg { width: 1.75rem; height: 1.75rem; }
-  hgroup p { font-size: .875rem; }
+  hgroup p { font-size: .9375rem; }
   .player { padding: .5rem; border-radius: 1rem; }
   .langs { flex-basis: 100%; }
   .engine { flex: 1 1 100%; }
   .segmented { flex: 1; }
   .segmented label { flex: 1; }
-  .links a { flex: 1; height: 2.75rem; }
+  .links a { flex: 1 1 8rem; height: 2.75rem; padding: 0 .75rem; }
   #log li { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -419,33 +444,37 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
   <header>
     <hgroup>
       <h1><svg viewBox="0 0 64 64" aria-hidden="true"><rect x=".5" y=".5" width="63" height="63" rx="14" fill="#0b0b0c" stroke="#2c2c2f"/><rect x="12" y="34" width="40" height="7" rx="3.5" fill="#ffd84a"/><rect x="20" y="46" width="24" height="5" rx="2.5" fill="#a1a1a6"/></svg>Tolk</h1>
-      <p>画面の音声を同時翻訳</p>
+      <p data-i18n="tagline">画面の音声を同時翻訳</p>
     </hgroup>
+    <label class="ui-lang">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+      <select id="uiLang" aria-label="表示言語" data-i18n-label="uiLang"></select>
+    </label>
   </header>
 
   <div class="player">
     <fieldset id="controls">
       <div class="langs">
-        <select id="src" aria-label="話されている言語"></select>
-        <button id="swap" type="button" aria-label="言語を入れ替える"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg></button>
-        <select id="tgt" aria-label="字幕の言語"></select>
+        <select id="src" aria-label="話されている言語" data-i18n-label="src"></select>
+        <button id="swap" type="button" aria-label="言語を入れ替える" data-i18n-label="swap"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg></button>
+        <select id="tgt" aria-label="字幕の言語" data-i18n-label="tgt"></select>
       </div>
       <div class="engine" role="radiogroup" aria-labelledby="engineLabel">
-        <span id="engineLabel">音声認識</span>
+        <span id="engineLabel" data-i18n="engine">音声認識</span>
         <div class="segmented">
-          <label><input type="radio" name="engine" value="local"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>端末内</label>
-          <label><input type="radio" name="engine" value="cloud"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>クラウド</label>
+          <label><input type="radio" name="engine" value="local"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span data-i18n="local">端末内</span></label>
+          <label><input type="radio" name="engine" value="cloud"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg><span data-i18n="cloud">クラウド</span></label>
         </div>
       </div>
     </fieldset>
 
     <div id="stageHome">
-      <section id="stage" class="stage" aria-label="字幕" data-view="checking">
+      <section id="stage" class="stage" aria-label="字幕" data-i18n-label="stage" data-view="checking">
         <div class="bar">
-          <p class="live" aria-hidden="true"><span class="dot"></span>翻訳中<span id="clock">0:00</span><span id="meter" class="meter"><i></i><i></i><i></i><i></i></span></p>
+          <p class="live" aria-hidden="true"><span class="dot"></span><span data-i18n="live">翻訳中</span><span id="clock">0:00</span><span id="meter" class="meter"><i></i><i></i><i></i><i></i></span></p>
           <div class="bar-actions">
-            <button id="pop" type="button" aria-label="小窓で表示" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"/><rect width="10" height="7" x="12" y="13" rx="2"/></svg><span>小窓で表示</span></button>
-            <button id="stop" type="button" aria-label="停止"><svg class="icon icon-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor"/></svg><span>停止</span></button>
+            <button id="pop" type="button" aria-label="小窓で表示" data-i18n-label="pop" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"/><rect width="10" height="7" x="12" y="13" rx="2"/></svg><span data-i18n="pop">小窓で表示</span></button>
+            <button id="stop" type="button" aria-label="停止" data-i18n-label="stop"><svg class="icon icon-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor"/></svg><span data-i18n="stop">停止</span></button>
           </div>
         </div>
         <button id="action" type="button" data-icon="share">
@@ -456,37 +485,37 @@ hgroup p { font-size: .9375rem; color: var(--text-2); }
           <span id="actionLabel">画面を選んで翻訳を始める</span>
         </button>
         <p id="status" role="status"></p>
-        <p id="hint"><span class="switch" aria-hidden="true"></span>共有ダイアログで「音声も共有する」をオンにしてください</p>
-        <p id="cloudNote"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>音声は Google に送信されます</p>
-        <p id="waiting">音声を待っています</p>
+        <p id="hint"><span class="switch" aria-hidden="true"></span><span data-i18n="hint">共有ダイアログで「音声も共有する」をオンにしてください</span></p>
+        <p id="cloudNote"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg><span data-i18n="cloudNote">音声は Google に送信されます</span></p>
+        <p id="waiting" data-i18n="waiting">音声を待っています</p>
         <div id="capTr" class="caption tr"></div>
         <div id="capSrc" class="caption src"></div>
         <div class="sample" aria-hidden="true">
-          <p class="tr">新しい機能を見ていきましょう</p>
-          <p class="src" lang="en">Let's take a look at the new features</p>
+          <p id="demoTr" class="tr">新しい機能を見ていきましょう</p>
+          <p id="demoSrc" class="src" lang="en">Let’s take a look at the new features</p>
         </div>
       </section>
       <div id="pipNote" class="pip-note" hidden>
-        <p>字幕を小窓に表示しています</p>
+        <p data-i18n="pipShowing">字幕を小窓に表示しています</p>
         <div>
-          <button id="unpop" type="button">タブに戻す</button>
-          <button id="stop2" type="button"><svg class="icon icon-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor"/></svg>停止</button>
+          <button id="unpop" type="button" data-i18n="unpop">タブに戻す</button>
+          <button id="stop2" type="button"><svg class="icon icon-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor"/></svg><span data-i18n="stop">停止</span></button>
         </div>
       </div>
     </div>
   </div>
 
-  <p class="notice"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>パソコン版 Chrome の最新版で開いてください</p>
+  <p class="notice"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg><span data-i18n="notice">パソコン版 Chrome の最新版で開いてください</span></p>
 
-  <nav class="links" aria-label="共有と作者">
-    <a href="https://x.com/intent/tweet?text=Tolk%EF%BD%9C%E7%94%BB%E9%9D%A2%E3%81%AE%E9%9F%B3%E5%A3%B0%E3%82%92%E5%90%8C%E6%99%82%E7%BF%BB%E8%A8%B3&amp;url=https%3A%2F%2Fnoxelwork.com%2Ftolk" target="_blank" rel="noopener noreferrer"><svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>X で共有</a>
-    <a href="https://x.com/NoxelLab" target="_blank" rel="noopener noreferrer"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></svg>作者をフォロー</a>
+  <nav class="links" aria-label="共有と作者" data-i18n-label="links">
+    <a id="shareLink" href="https://x.com/intent/tweet?text=Tolk%EF%BD%9C%E7%94%BB%E9%9D%A2%E3%81%AE%E9%9F%B3%E5%A3%B0%E3%82%92%E5%90%8C%E6%99%82%E7%BF%BB%E8%A8%B3&amp;url=https%3A%2F%2Fnoxelwork.com%2Ftolk" target="_blank" rel="noopener noreferrer"><svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span data-i18n="share">X で共有</span></a>
+    <a href="https://x.com/NoxelLab" target="_blank" rel="noopener noreferrer"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></svg><span data-i18n="follow">作者をフォロー</span></a>
   </nav>
 
   <section class="log" aria-labelledby="logTitle">
     <div class="log-head">
-      <h2 id="logTitle">履歴</h2>
-      <button id="clear" type="button">消す</button>
+      <h2 id="logTitle" data-i18n="history">履歴</h2>
+      <button id="clear" type="button" data-i18n="clear">消す</button>
     </div>
     <ol id="log"></ol>
   </section>
@@ -499,13 +528,1179 @@ const LOCALES = new Map([
   ['ru', 'ru-RU'], ['hi', 'hi-IN'], ['id', 'id-ID'], ['vi', 'vi-VN'], ['th', 'th-TH'],
   ['ar', 'ar-SA'], ['tr', 'tr-TR'], ['nl', 'nl-NL'], ['pl', 'pl-PL'], ['uk', 'uk-UA'],
 ]);
+
+// UI text for every language that can be a subtitle language. {p} is a percentage, {e} an error message.
+const I18N = {
+  ja: {
+    name: '日本語',
+    title: 'Tolk｜画面の音声を同時翻訳',
+    tagline: '画面の音声を同時翻訳',
+    uiLang: '表示言語',
+    src: '話されている言語',
+    tgt: '字幕の言語',
+    swap: '言語を入れ替える',
+    engine: '音声認識',
+    local: '端末内',
+    cloud: 'クラウド',
+    stage: '字幕',
+    live: '翻訳中',
+    pop: '小窓で表示',
+    stop: '停止',
+    start: '画面を選んで翻訳を始める',
+    starting: '画面を選んでいます',
+    getModel: '翻訳モデルを準備する',
+    getSpeech: '音声認識パックを準備する',
+    preparingModel: '翻訳モデルを準備中',
+    downloadingModel: '翻訳モデルをダウンロード中 {p}%',
+    downloadingSpeech: '音声認識パックをダウンロード中',
+    hint: '共有ダイアログで「音声も共有する」をオンにしてください',
+    cloudNote: '音声は Google に送信されます',
+    waiting: '音声を待っています',
+    pipShowing: '字幕を小窓に表示しています',
+    unpop: 'タブに戻す',
+    notice: 'パソコン版 Chrome の最新版で開いてください',
+    share: 'X で共有',
+    follow: '作者をフォロー',
+    links: '共有と作者',
+    history: '履歴',
+    clear: '消す',
+    sameLang: '話されている言語と字幕の言語を別々に選んでください',
+    pairUnavailable: 'この言語の組み合わせは翻訳できません',
+    localUnavailable: 'この言語は端末内の音声認識に対応していません。クラウドに切り替えてください。',
+    checkFailed: '対応状況を確認できませんでした（{e}）',
+    firstDownload: '初回のみダウンロードが必要です',
+    ready: '準備ができました',
+    installFailed: '音声認識パックを入手できませんでした',
+    prepareFailed: '準備に失敗しました（{e}）',
+    pickScreen: '共有する画面を選んでください',
+    cancelled: '画面の共有をキャンセルしました',
+    shareFailed: '画面を共有できませんでした（{e}）',
+    noAudio: '音声が共有されていません',
+    ended: '画面の共有が終わりました',
+    modelFailed: '翻訳モデルを読み込めませんでした（{e}）',
+    stopped: '翻訳を止めました',
+    srFailed: '音声認識を始められませんでした（{e}）',
+    notAllowed: '音声認識が許可されていません',
+    serviceNotAllowed: 'この音声認識は利用できません。音声認識の方式を切り替えてください。',
+    langNotSupported: 'この言語の音声認識には対応していません',
+    audioCapture: '共有した画面から音声を取得できませんでした',
+    network: '音声認識サービスに接続できません。ネットワークを確認するか、端末内の音声認識に切り替えてください。',
+    untranslated: '（翻訳できませんでした）',
+    popFailed: '小窓を開けませんでした（{e}）',
+    demo: ['新しい機能を見ていきましょう', 'みなさんお待ちかねの部分です', '本日の会議にご参加いただきありがとうございます'],
+  },
+  en: {
+    name: 'English',
+    title: 'Tolk | Translate screen audio into live subtitles',
+    tagline: 'Translate screen audio into live subtitles',
+    uiLang: 'Display language',
+    src: 'Spoken language',
+    tgt: 'Subtitle language',
+    swap: 'Swap languages',
+    engine: 'Speech recognition',
+    local: 'On device',
+    cloud: 'Cloud',
+    stage: 'Subtitles',
+    live: 'Translating',
+    pop: 'Pop out',
+    stop: 'Stop',
+    start: 'Choose a screen to translate',
+    starting: 'Choosing a screen',
+    getModel: 'Download the translation model',
+    getSpeech: 'Download the speech pack',
+    preparingModel: 'Preparing the translation model',
+    downloadingModel: 'Downloading the translation model {p}%',
+    downloadingSpeech: 'Downloading the speech pack',
+    hint: 'In the share dialog, turn on audio sharing',
+    cloudNote: 'Audio is sent to Google',
+    waiting: 'Waiting for audio',
+    pipShowing: 'Subtitles are showing in a pop-out window',
+    unpop: 'Back to tab',
+    notice: 'Open this page in the latest Chrome on a computer',
+    share: 'Share on X',
+    follow: 'Follow the creator',
+    links: 'Share and follow',
+    history: 'History',
+    clear: 'Clear',
+    sameLang: 'Choose different languages for speech and subtitles',
+    pairUnavailable: 'This language pair can’t be translated',
+    localUnavailable: 'On-device recognition doesn’t support this language. Switch to Cloud.',
+    checkFailed: 'Couldn’t check language support ({e})',
+    firstDownload: 'A one-time download is needed',
+    ready: 'Ready',
+    installFailed: 'Couldn’t get the speech pack',
+    prepareFailed: 'Setup failed ({e})',
+    pickScreen: 'Choose a screen to share',
+    cancelled: 'Screen sharing was canceled',
+    shareFailed: 'Couldn’t share the screen ({e})',
+    noAudio: 'No audio is being shared',
+    ended: 'Screen sharing ended',
+    modelFailed: 'Couldn’t load the translation model ({e})',
+    stopped: 'Translation stopped',
+    srFailed: 'Couldn’t start speech recognition ({e})',
+    notAllowed: 'Speech recognition isn’t allowed',
+    serviceNotAllowed: 'This speech recognition isn’t available. Switch the recognition mode.',
+    langNotSupported: 'Speech recognition doesn’t support this language',
+    audioCapture: 'Couldn’t get audio from the shared screen',
+    network: 'Can’t reach the speech recognition service. Check your network or switch to On device.',
+    untranslated: '(Couldn’t translate)',
+    popFailed: 'Couldn’t open the pop-out window ({e})',
+    demo: ['Let’s take a look at the new features', 'This is the part everyone has been waiting for', 'Thanks for joining today’s meeting'],
+  },
+  zh: {
+    name: '简体中文',
+    title: 'Tolk｜将屏幕声音实时翻译成字幕',
+    tagline: '将屏幕声音实时翻译成字幕',
+    uiLang: '界面语言',
+    src: '说话语言',
+    tgt: '字幕语言',
+    swap: '交换语言',
+    engine: '语音识别',
+    local: '本机',
+    cloud: '云端',
+    stage: '字幕',
+    live: '翻译中',
+    pop: '小窗显示',
+    stop: '停止',
+    start: '选择屏幕并开始翻译',
+    starting: '正在选择屏幕',
+    getModel: '下载翻译模型',
+    getSpeech: '下载语音识别包',
+    preparingModel: '正在准备翻译模型',
+    downloadingModel: '正在下载翻译模型 {p}%',
+    downloadingSpeech: '正在下载语音识别包',
+    hint: '请在共享对话框中开启音频共享',
+    cloudNote: '音频将发送给 Google',
+    waiting: '正在等待声音',
+    pipShowing: '字幕正在小窗中显示',
+    unpop: '返回标签页',
+    notice: '请在电脑上用最新版 Chrome 打开',
+    share: '分享到 X',
+    follow: '关注作者',
+    links: '分享与关注',
+    history: '记录',
+    clear: '清除',
+    sameLang: '请为说话语言和字幕语言选择不同的语言',
+    pairUnavailable: '无法翻译此语言组合',
+    localUnavailable: '本机语音识别不支持此语言，请切换到云端。',
+    checkFailed: '无法确认支持情况（{e}）',
+    firstDownload: '首次使用需要下载',
+    ready: '已就绪',
+    installFailed: '无法获取语音识别包',
+    prepareFailed: '准备失败（{e}）',
+    pickScreen: '请选择要共享的屏幕',
+    cancelled: '已取消屏幕共享',
+    shareFailed: '无法共享屏幕（{e}）',
+    noAudio: '未共享音频',
+    ended: '屏幕共享已结束',
+    modelFailed: '无法加载翻译模型（{e}）',
+    stopped: '已停止翻译',
+    srFailed: '无法开始语音识别（{e}）',
+    notAllowed: '未允许语音识别',
+    serviceNotAllowed: '此语音识别不可用，请切换识别方式。',
+    langNotSupported: '语音识别不支持此语言',
+    audioCapture: '无法从共享的屏幕获取音频',
+    network: '无法连接语音识别服务。请检查网络，或切换到本机语音识别。',
+    untranslated: '（无法翻译）',
+    popFailed: '无法打开小窗（{e}）',
+    demo: ['我们来看看新功能', '这就是大家期待已久的部分', '感谢大家参加今天的会议'],
+  },
+  'zh-Hant': {
+    name: '繁體中文',
+    title: 'Tolk｜將螢幕聲音即時翻譯成字幕',
+    tagline: '將螢幕聲音即時翻譯成字幕',
+    uiLang: '介面語言',
+    src: '說話語言',
+    tgt: '字幕語言',
+    swap: '交換語言',
+    engine: '語音辨識',
+    local: '本機',
+    cloud: '雲端',
+    stage: '字幕',
+    live: '翻譯中',
+    pop: '小視窗顯示',
+    stop: '停止',
+    start: '選擇畫面並開始翻譯',
+    starting: '正在選擇畫面',
+    getModel: '下載翻譯模型',
+    getSpeech: '下載語音辨識套件',
+    preparingModel: '正在準備翻譯模型',
+    downloadingModel: '正在下載翻譯模型 {p}%',
+    downloadingSpeech: '正在下載語音辨識套件',
+    hint: '請在分享對話框中開啟音訊分享',
+    cloudNote: '音訊會傳送給 Google',
+    waiting: '正在等待聲音',
+    pipShowing: '字幕正在小視窗中顯示',
+    unpop: '回到分頁',
+    notice: '請在電腦上用最新版 Chrome 開啟',
+    share: '分享到 X',
+    follow: '追蹤作者',
+    links: '分享與追蹤',
+    history: '紀錄',
+    clear: '清除',
+    sameLang: '請為說話語言和字幕語言選擇不同的語言',
+    pairUnavailable: '無法翻譯這個語言組合',
+    localUnavailable: '本機語音辨識不支援這個語言，請切換到雲端。',
+    checkFailed: '無法確認支援狀況（{e}）',
+    firstDownload: '第一次使用需要下載',
+    ready: '準備就緒',
+    installFailed: '無法取得語音辨識套件',
+    prepareFailed: '準備失敗（{e}）',
+    pickScreen: '請選擇要分享的畫面',
+    cancelled: '已取消畫面分享',
+    shareFailed: '無法分享畫面（{e}）',
+    noAudio: '沒有分享音訊',
+    ended: '畫面分享已結束',
+    modelFailed: '無法載入翻譯模型（{e}）',
+    stopped: '已停止翻譯',
+    srFailed: '無法開始語音辨識（{e}）',
+    notAllowed: '未允許語音辨識',
+    serviceNotAllowed: '無法使用這個語音辨識，請切換辨識方式。',
+    langNotSupported: '語音辨識不支援這個語言',
+    audioCapture: '無法從分享的畫面取得音訊',
+    network: '無法連線到語音辨識服務。請檢查網路，或切換到本機語音辨識。',
+    untranslated: '（無法翻譯）',
+    popFailed: '無法開啟小視窗（{e}）',
+    demo: ['我們來看看新功能', '這就是大家期待已久的部分', '感謝大家參加今天的會議'],
+  },
+  ko: {
+    name: '한국어',
+    title: 'Tolk | 화면 소리를 실시간 자막으로 번역',
+    tagline: '화면 소리를 실시간 자막으로 번역',
+    uiLang: '표시 언어',
+    src: '말하는 언어',
+    tgt: '자막 언어',
+    swap: '언어 바꾸기',
+    engine: '음성 인식',
+    local: '기기 내',
+    cloud: '클라우드',
+    stage: '자막',
+    live: '번역 중',
+    pop: '작은 창으로 보기',
+    stop: '중지',
+    start: '화면을 선택하고 번역 시작',
+    starting: '화면 선택 중',
+    getModel: '번역 모델 다운로드',
+    getSpeech: '음성 인식 팩 다운로드',
+    preparingModel: '번역 모델 준비 중',
+    downloadingModel: '번역 모델 다운로드 중 {p}%',
+    downloadingSpeech: '음성 인식 팩 다운로드 중',
+    hint: '공유 대화상자에서 오디오 공유를 켜 주세요',
+    cloudNote: '오디오가 Google로 전송됩니다',
+    waiting: '소리를 기다리는 중',
+    pipShowing: '자막을 작은 창에 표시하고 있습니다',
+    unpop: '탭으로 돌아가기',
+    notice: '컴퓨터의 최신 Chrome에서 열어 주세요',
+    share: 'X에 공유',
+    follow: '제작자 팔로우',
+    links: '공유 및 팔로우',
+    history: '기록',
+    clear: '지우기',
+    sameLang: '말하는 언어와 자막 언어를 서로 다르게 선택해 주세요',
+    pairUnavailable: '이 언어 조합은 번역할 수 없습니다',
+    localUnavailable: '기기 내 음성 인식은 이 언어를 지원하지 않습니다. 클라우드로 전환해 주세요.',
+    checkFailed: '지원 여부를 확인하지 못했습니다 ({e})',
+    firstDownload: '처음 한 번만 다운로드가 필요합니다',
+    ready: '준비되었습니다',
+    installFailed: '음성 인식 팩을 받지 못했습니다',
+    prepareFailed: '준비에 실패했습니다 ({e})',
+    pickScreen: '공유할 화면을 선택해 주세요',
+    cancelled: '화면 공유를 취소했습니다',
+    shareFailed: '화면을 공유하지 못했습니다 ({e})',
+    noAudio: '오디오가 공유되지 않았습니다',
+    ended: '화면 공유가 끝났습니다',
+    modelFailed: '번역 모델을 불러오지 못했습니다 ({e})',
+    stopped: '번역을 중지했습니다',
+    srFailed: '음성 인식을 시작하지 못했습니다 ({e})',
+    notAllowed: '음성 인식이 허용되지 않았습니다',
+    serviceNotAllowed: '이 음성 인식은 사용할 수 없습니다. 인식 방식을 바꿔 주세요.',
+    langNotSupported: '이 언어의 음성 인식은 지원되지 않습니다',
+    audioCapture: '공유한 화면에서 오디오를 가져오지 못했습니다',
+    network: '음성 인식 서비스에 연결할 수 없습니다. 네트워크를 확인하거나 기기 내 음성 인식으로 전환해 주세요.',
+    untranslated: '(번역하지 못했습니다)',
+    popFailed: '작은 창을 열지 못했습니다 ({e})',
+    demo: ['새로운 기능을 살펴보겠습니다', '모두가 기다려 온 부분입니다', '오늘 회의에 참석해 주셔서 감사합니다'],
+  },
+  es: {
+    name: 'Español',
+    title: 'Tolk | Traduce el audio de la pantalla a subtítulos en directo',
+    tagline: 'Traduce el audio de la pantalla a subtítulos en directo',
+    uiLang: 'Idioma de la interfaz',
+    src: 'Idioma hablado',
+    tgt: 'Idioma de los subtítulos',
+    swap: 'Intercambiar idiomas',
+    engine: 'Reconocimiento de voz',
+    local: 'En el dispositivo',
+    cloud: 'Nube',
+    stage: 'Subtítulos',
+    live: 'Traduciendo',
+    pop: 'Ventana flotante',
+    stop: 'Detener',
+    start: 'Elige una pantalla para traducir',
+    starting: 'Eligiendo pantalla',
+    getModel: 'Descargar el modelo de traducción',
+    getSpeech: 'Descargar el paquete de voz',
+    preparingModel: 'Preparando el modelo de traducción',
+    downloadingModel: 'Descargando el modelo de traducción {p} %',
+    downloadingSpeech: 'Descargando el paquete de voz',
+    hint: 'En el cuadro para compartir, activa compartir audio',
+    cloudNote: 'El audio se envía a Google',
+    waiting: 'Esperando audio',
+    pipShowing: 'Los subtítulos se muestran en una ventana flotante',
+    unpop: 'Volver a la pestaña',
+    notice: 'Abre esta página en la última versión de Chrome en un ordenador',
+    share: 'Compartir en X',
+    follow: 'Seguir al creador',
+    links: 'Compartir y seguir',
+    history: 'Historial',
+    clear: 'Borrar',
+    sameLang: 'Elige idiomas distintos para la voz y los subtítulos',
+    pairUnavailable: 'No se puede traducir esta combinación de idiomas',
+    localUnavailable: 'El reconocimiento en el dispositivo no admite este idioma. Cambia a Nube.',
+    checkFailed: 'No se pudo comprobar la compatibilidad ({e})',
+    firstDownload: 'Se necesita una descarga única',
+    ready: 'Listo',
+    installFailed: 'No se pudo obtener el paquete de voz',
+    prepareFailed: 'Error al preparar ({e})',
+    pickScreen: 'Elige la pantalla que quieres compartir',
+    cancelled: 'Se canceló el uso compartido de pantalla',
+    shareFailed: 'No se pudo compartir la pantalla ({e})',
+    noAudio: 'No se está compartiendo audio',
+    ended: 'Se dejó de compartir la pantalla',
+    modelFailed: 'No se pudo cargar el modelo de traducción ({e})',
+    stopped: 'Traducción detenida',
+    srFailed: 'No se pudo iniciar el reconocimiento de voz ({e})',
+    notAllowed: 'El reconocimiento de voz no está permitido',
+    serviceNotAllowed: 'Este reconocimiento de voz no está disponible. Cambia el modo de reconocimiento.',
+    langNotSupported: 'El reconocimiento de voz no admite este idioma',
+    audioCapture: 'No se pudo obtener audio de la pantalla compartida',
+    network: 'No se puede conectar con el servicio de reconocimiento de voz. Revisa la red o cambia a En el dispositivo.',
+    untranslated: '(No se pudo traducir)',
+    popFailed: 'No se pudo abrir la ventana flotante ({e})',
+    demo: ['Echemos un vistazo a las nuevas funciones', 'Esta es la parte que todos estaban esperando', 'Gracias por unirse a la reunión de hoy'],
+  },
+  fr: {
+    name: 'Français',
+    title: 'Tolk | Traduisez l’audio de l’écran en sous-titres en direct',
+    tagline: 'Traduisez l’audio de l’écran en sous-titres en direct',
+    uiLang: 'Langue de l’interface',
+    src: 'Langue parlée',
+    tgt: 'Langue des sous-titres',
+    swap: 'Inverser les langues',
+    engine: 'Reconnaissance vocale',
+    local: 'Sur l’appareil',
+    cloud: 'Cloud',
+    stage: 'Sous-titres',
+    live: 'Traduction en cours',
+    pop: 'Fenêtre flottante',
+    stop: 'Arrêter',
+    start: 'Choisir un écran à traduire',
+    starting: 'Choix de l’écran',
+    getModel: 'Télécharger le modèle de traduction',
+    getSpeech: 'Télécharger le pack vocal',
+    preparingModel: 'Préparation du modèle de traduction',
+    downloadingModel: 'Téléchargement du modèle de traduction {p} %',
+    downloadingSpeech: 'Téléchargement du pack vocal',
+    hint: 'Dans la fenêtre de partage, activez le partage audio',
+    cloudNote: 'L’audio est envoyé à Google',
+    waiting: 'En attente d’audio',
+    pipShowing: 'Les sous-titres s’affichent dans une fenêtre flottante',
+    unpop: 'Revenir à l’onglet',
+    notice: 'Ouvrez cette page dans la dernière version de Chrome sur un ordinateur',
+    share: 'Partager sur X',
+    follow: 'Suivre le créateur',
+    links: 'Partager et suivre',
+    history: 'Historique',
+    clear: 'Effacer',
+    sameLang: 'Choisissez des langues différentes pour la voix et les sous-titres',
+    pairUnavailable: 'Impossible de traduire cette paire de langues',
+    localUnavailable: 'La reconnaissance sur l’appareil ne prend pas en charge cette langue. Passez au cloud.',
+    checkFailed: 'Impossible de vérifier la compatibilité ({e})',
+    firstDownload: 'Un téléchargement unique est nécessaire',
+    ready: 'Prêt',
+    installFailed: 'Impossible d’obtenir le pack vocal',
+    prepareFailed: 'Échec de la préparation ({e})',
+    pickScreen: 'Choisissez l’écran à partager',
+    cancelled: 'Partage d’écran annulé',
+    shareFailed: 'Impossible de partager l’écran ({e})',
+    noAudio: 'Aucun audio n’est partagé',
+    ended: 'Le partage d’écran est terminé',
+    modelFailed: 'Impossible de charger le modèle de traduction ({e})',
+    stopped: 'Traduction arrêtée',
+    srFailed: 'Impossible de démarrer la reconnaissance vocale ({e})',
+    notAllowed: 'La reconnaissance vocale n’est pas autorisée',
+    serviceNotAllowed: 'Cette reconnaissance vocale n’est pas disponible. Changez de mode de reconnaissance.',
+    langNotSupported: 'La reconnaissance vocale ne prend pas en charge cette langue',
+    audioCapture: 'Impossible d’obtenir l’audio de l’écran partagé',
+    network: 'Impossible de joindre le service de reconnaissance vocale. Vérifiez le réseau ou passez à Sur l’appareil.',
+    untranslated: '(Traduction impossible)',
+    popFailed: 'Impossible d’ouvrir la fenêtre flottante ({e})',
+    demo: ['Découvrons les nouvelles fonctionnalités', 'Voici le moment que tout le monde attendait', 'Merci d’avoir rejoint la réunion d’aujourd’hui'],
+  },
+  de: {
+    name: 'Deutsch',
+    title: 'Tolk | Bildschirmton live als Untertitel übersetzen',
+    tagline: 'Bildschirmton live als Untertitel übersetzen',
+    uiLang: 'Anzeigesprache',
+    src: 'Gesprochene Sprache',
+    tgt: 'Untertitelsprache',
+    swap: 'Sprachen tauschen',
+    engine: 'Spracherkennung',
+    local: 'Auf dem Gerät',
+    cloud: 'Cloud',
+    stage: 'Untertitel',
+    live: 'Übersetzung läuft',
+    pop: 'Bild-im-Bild',
+    stop: 'Beenden',
+    start: 'Bildschirm wählen und übersetzen',
+    starting: 'Bildschirm wird gewählt',
+    getModel: 'Übersetzungsmodell herunterladen',
+    getSpeech: 'Sprachpaket herunterladen',
+    preparingModel: 'Übersetzungsmodell wird vorbereitet',
+    downloadingModel: 'Übersetzungsmodell wird geladen {p} %',
+    downloadingSpeech: 'Sprachpaket wird geladen',
+    hint: 'Aktiviere im Freigabedialog die Audiofreigabe',
+    cloudNote: 'Audio wird an Google gesendet',
+    waiting: 'Warte auf Audio',
+    pipShowing: 'Die Untertitel werden im Bild-im-Bild-Fenster angezeigt',
+    unpop: 'Zurück zum Tab',
+    notice: 'Öffne diese Seite in der neuesten Chrome-Version auf einem Computer',
+    share: 'Auf X teilen',
+    follow: 'Dem Ersteller folgen',
+    links: 'Teilen und folgen',
+    history: 'Verlauf',
+    clear: 'Löschen',
+    sameLang: 'Wähle für Ton und Untertitel verschiedene Sprachen',
+    pairUnavailable: 'Diese Sprachkombination kann nicht übersetzt werden',
+    localUnavailable: 'Die Erkennung auf dem Gerät unterstützt diese Sprache nicht. Wechsle zu Cloud.',
+    checkFailed: 'Unterstützung konnte nicht geprüft werden ({e})',
+    firstDownload: 'Ein einmaliger Download ist nötig',
+    ready: 'Bereit',
+    installFailed: 'Sprachpaket konnte nicht geladen werden',
+    prepareFailed: 'Vorbereitung fehlgeschlagen ({e})',
+    pickScreen: 'Wähle den Bildschirm, den du teilen möchtest',
+    cancelled: 'Bildschirmfreigabe abgebrochen',
+    shareFailed: 'Bildschirm konnte nicht geteilt werden ({e})',
+    noAudio: 'Es wird kein Audio geteilt',
+    ended: 'Bildschirmfreigabe beendet',
+    modelFailed: 'Übersetzungsmodell konnte nicht geladen werden ({e})',
+    stopped: 'Übersetzung beendet',
+    srFailed: 'Spracherkennung konnte nicht gestartet werden ({e})',
+    notAllowed: 'Spracherkennung ist nicht erlaubt',
+    serviceNotAllowed: 'Diese Spracherkennung ist nicht verfügbar. Wechsle die Erkennungsart.',
+    langNotSupported: 'Die Spracherkennung unterstützt diese Sprache nicht',
+    audioCapture: 'Vom geteilten Bildschirm kam kein Audio',
+    network: 'Der Spracherkennungsdienst ist nicht erreichbar. Prüfe das Netzwerk oder wechsle zu „Auf dem Gerät“.',
+    untranslated: '(Nicht übersetzt)',
+    popFailed: 'Bild-im-Bild-Fenster konnte nicht geöffnet werden ({e})',
+    demo: ['Schauen wir uns die neuen Funktionen an', 'Das ist der Teil, auf den alle gewartet haben', 'Danke für die Teilnahme am heutigen Meeting'],
+  },
+  it: {
+    name: 'Italiano',
+    title: 'Tolk | Traduci l’audio dello schermo in sottotitoli dal vivo',
+    tagline: 'Traduci l’audio dello schermo in sottotitoli dal vivo',
+    uiLang: 'Lingua dell’interfaccia',
+    src: 'Lingua parlata',
+    tgt: 'Lingua dei sottotitoli',
+    swap: 'Scambia le lingue',
+    engine: 'Riconoscimento vocale',
+    local: 'Sul dispositivo',
+    cloud: 'Cloud',
+    stage: 'Sottotitoli',
+    live: 'Traduzione in corso',
+    pop: 'Finestra mobile',
+    stop: 'Interrompi',
+    start: 'Scegli uno schermo da tradurre',
+    starting: 'Scelta dello schermo',
+    getModel: 'Scarica il modello di traduzione',
+    getSpeech: 'Scarica il pacchetto vocale',
+    preparingModel: 'Preparazione del modello di traduzione',
+    downloadingModel: 'Download del modello di traduzione {p}%',
+    downloadingSpeech: 'Download del pacchetto vocale',
+    hint: 'Nella finestra di condivisione, attiva la condivisione dell’audio',
+    cloudNote: 'L’audio viene inviato a Google',
+    waiting: 'In attesa dell’audio',
+    pipShowing: 'I sottotitoli sono nella finestra mobile',
+    unpop: 'Torna alla scheda',
+    notice: 'Apri questa pagina con l’ultima versione di Chrome su un computer',
+    share: 'Condividi su X',
+    follow: 'Segui il creatore',
+    links: 'Condividi e segui',
+    history: 'Cronologia',
+    clear: 'Cancella',
+    sameLang: 'Scegli lingue diverse per il parlato e i sottotitoli',
+    pairUnavailable: 'Questa coppia di lingue non può essere tradotta',
+    localUnavailable: 'Il riconoscimento sul dispositivo non supporta questa lingua. Passa al cloud.',
+    checkFailed: 'Impossibile verificare la compatibilità ({e})',
+    firstDownload: 'Serve un download una tantum',
+    ready: 'Pronto',
+    installFailed: 'Impossibile ottenere il pacchetto vocale',
+    prepareFailed: 'Preparazione non riuscita ({e})',
+    pickScreen: 'Scegli lo schermo da condividere',
+    cancelled: 'Condivisione dello schermo annullata',
+    shareFailed: 'Impossibile condividere lo schermo ({e})',
+    noAudio: 'Nessun audio condiviso',
+    ended: 'Condivisione dello schermo terminata',
+    modelFailed: 'Impossibile caricare il modello di traduzione ({e})',
+    stopped: 'Traduzione interrotta',
+    srFailed: 'Impossibile avviare il riconoscimento vocale ({e})',
+    notAllowed: 'Il riconoscimento vocale non è consentito',
+    serviceNotAllowed: 'Questo riconoscimento vocale non è disponibile. Cambia modalità di riconoscimento.',
+    langNotSupported: 'Il riconoscimento vocale non supporta questa lingua',
+    audioCapture: 'Impossibile ottenere l’audio dallo schermo condiviso',
+    network: 'Impossibile raggiungere il servizio di riconoscimento vocale. Controlla la rete o passa a Sul dispositivo.',
+    untranslated: '(Traduzione non riuscita)',
+    popFailed: 'Impossibile aprire la finestra mobile ({e})',
+    demo: ['Diamo un’occhiata alle nuove funzioni', 'Ecco la parte che tutti stavano aspettando', 'Grazie per aver partecipato alla riunione di oggi'],
+  },
+  pt: {
+    name: 'Português',
+    title: 'Tolk | Traduza o áudio da tela em legendas ao vivo',
+    tagline: 'Traduza o áudio da tela em legendas ao vivo',
+    uiLang: 'Idioma da interface',
+    src: 'Idioma falado',
+    tgt: 'Idioma das legendas',
+    swap: 'Trocar idiomas',
+    engine: 'Reconhecimento de voz',
+    local: 'No dispositivo',
+    cloud: 'Nuvem',
+    stage: 'Legendas',
+    live: 'Traduzindo',
+    pop: 'Janela flutuante',
+    stop: 'Parar',
+    start: 'Escolha uma tela para traduzir',
+    starting: 'Escolhendo a tela',
+    getModel: 'Baixar o modelo de tradução',
+    getSpeech: 'Baixar o pacote de voz',
+    preparingModel: 'Preparando o modelo de tradução',
+    downloadingModel: 'Baixando o modelo de tradução {p}%',
+    downloadingSpeech: 'Baixando o pacote de voz',
+    hint: 'Na caixa de compartilhamento, ative o compartilhamento de áudio',
+    cloudNote: 'O áudio é enviado ao Google',
+    waiting: 'Aguardando áudio',
+    pipShowing: 'As legendas estão na janela flutuante',
+    unpop: 'Voltar para a guia',
+    notice: 'Abra esta página na versão mais recente do Chrome em um computador',
+    share: 'Compartilhar no X',
+    follow: 'Seguir o criador',
+    links: 'Compartilhar e seguir',
+    history: 'Histórico',
+    clear: 'Limpar',
+    sameLang: 'Escolha idiomas diferentes para a fala e as legendas',
+    pairUnavailable: 'Não é possível traduzir este par de idiomas',
+    localUnavailable: 'O reconhecimento no dispositivo não é compatível com este idioma. Mude para Nuvem.',
+    checkFailed: 'Não foi possível verificar a compatibilidade ({e})',
+    firstDownload: 'É necessário um download único',
+    ready: 'Pronto',
+    installFailed: 'Não foi possível obter o pacote de voz',
+    prepareFailed: 'Falha na preparação ({e})',
+    pickScreen: 'Escolha a tela que quer compartilhar',
+    cancelled: 'O compartilhamento de tela foi cancelado',
+    shareFailed: 'Não foi possível compartilhar a tela ({e})',
+    noAudio: 'Nenhum áudio está sendo compartilhado',
+    ended: 'O compartilhamento de tela terminou',
+    modelFailed: 'Não foi possível carregar o modelo de tradução ({e})',
+    stopped: 'Tradução interrompida',
+    srFailed: 'Não foi possível iniciar o reconhecimento de voz ({e})',
+    notAllowed: 'O reconhecimento de voz não foi permitido',
+    serviceNotAllowed: 'Este reconhecimento de voz não está disponível. Mude o modo de reconhecimento.',
+    langNotSupported: 'O reconhecimento de voz não é compatível com este idioma',
+    audioCapture: 'Não foi possível obter o áudio da tela compartilhada',
+    network: 'Não foi possível conectar ao serviço de reconhecimento de voz. Verifique a rede ou mude para No dispositivo.',
+    untranslated: '(Não foi possível traduzir)',
+    popFailed: 'Não foi possível abrir a janela flutuante ({e})',
+    demo: ['Vamos dar uma olhada nos novos recursos', 'Esta é a parte que todos estavam esperando', 'Obrigado por participar da reunião de hoje'],
+  },
+  ru: {
+    name: 'Русский',
+    title: 'Tolk | Перевод звука с экрана в субтитры в реальном времени',
+    tagline: 'Перевод звука с экрана в субтитры в реальном времени',
+    uiLang: 'Язык интерфейса',
+    src: 'Язык речи',
+    tgt: 'Язык субтитров',
+    swap: 'Поменять языки',
+    engine: 'Распознавание речи',
+    local: 'На устройстве',
+    cloud: 'Облако',
+    stage: 'Субтитры',
+    live: 'Идёт перевод',
+    pop: 'Отдельное окно',
+    stop: 'Остановить',
+    start: 'Выбрать экран для перевода',
+    starting: 'Выбор экрана',
+    getModel: 'Скачать модель перевода',
+    getSpeech: 'Скачать речевой пакет',
+    preparingModel: 'Подготовка модели перевода',
+    downloadingModel: 'Загрузка модели перевода {p}%',
+    downloadingSpeech: 'Загрузка речевого пакета',
+    hint: 'В окне демонстрации включите передачу звука',
+    cloudNote: 'Звук отправляется в Google',
+    waiting: 'Ожидание звука',
+    pipShowing: 'Субтитры показаны в отдельном окне',
+    unpop: 'Вернуть во вкладку',
+    notice: 'Откройте эту страницу в последней версии Chrome на компьютере',
+    share: 'Поделиться в X',
+    follow: 'Подписаться на автора',
+    links: 'Поделиться и подписаться',
+    history: 'История',
+    clear: 'Очистить',
+    sameLang: 'Выберите разные языки для речи и субтитров',
+    pairUnavailable: 'Эту пару языков нельзя перевести',
+    localUnavailable: 'Распознавание на устройстве не поддерживает этот язык. Переключитесь на облако.',
+    checkFailed: 'Не удалось проверить поддержку ({e})',
+    firstDownload: 'Нужна однократная загрузка',
+    ready: 'Готово',
+    installFailed: 'Не удалось получить речевой пакет',
+    prepareFailed: 'Не удалось подготовить ({e})',
+    pickScreen: 'Выберите экран для демонстрации',
+    cancelled: 'Демонстрация экрана отменена',
+    shareFailed: 'Не удалось начать демонстрацию экрана ({e})',
+    noAudio: 'Звук не передаётся',
+    ended: 'Демонстрация экрана завершена',
+    modelFailed: 'Не удалось загрузить модель перевода ({e})',
+    stopped: 'Перевод остановлен',
+    srFailed: 'Не удалось запустить распознавание речи ({e})',
+    notAllowed: 'Распознавание речи не разрешено',
+    serviceNotAllowed: 'Это распознавание речи недоступно. Смените способ распознавания.',
+    langNotSupported: 'Распознавание речи не поддерживает этот язык',
+    audioCapture: 'Не удалось получить звук с демонстрируемого экрана',
+    network: 'Не удаётся подключиться к службе распознавания речи. Проверьте сеть или переключитесь на распознавание на устройстве.',
+    untranslated: '(Не удалось перевести)',
+    popFailed: 'Не удалось открыть отдельное окно ({e})',
+    demo: ['Давайте посмотрим на новые функции', 'Вот та часть, которую все ждали', 'Спасибо, что присоединились к сегодняшней встрече'],
+  },
+  hi: {
+    name: 'हिन्दी',
+    title: 'Tolk | स्क्रीन की आवाज़ को लाइव सबटाइटल में अनुवाद करें',
+    tagline: 'स्क्रीन की आवाज़ को लाइव सबटाइटल में अनुवाद करें',
+    uiLang: 'इंटरफ़ेस की भाषा',
+    src: 'बोली जा रही भाषा',
+    tgt: 'सबटाइटल की भाषा',
+    swap: 'भाषाएँ बदलें',
+    engine: 'आवाज़ पहचान',
+    local: 'डिवाइस पर',
+    cloud: 'क्लाउड',
+    stage: 'सबटाइटल',
+    live: 'अनुवाद हो रहा है',
+    pop: 'छोटी विंडो में दिखाएँ',
+    stop: 'रोकें',
+    start: 'अनुवाद के लिए स्क्रीन चुनें',
+    starting: 'स्क्रीन चुनी जा रही है',
+    getModel: 'अनुवाद मॉडल डाउनलोड करें',
+    getSpeech: 'आवाज़ पहचान पैक डाउनलोड करें',
+    preparingModel: 'अनुवाद मॉडल तैयार हो रहा है',
+    downloadingModel: 'अनुवाद मॉडल डाउनलोड हो रहा है {p}%',
+    downloadingSpeech: 'आवाज़ पहचान पैक डाउनलोड हो रहा है',
+    hint: 'शेयर डायलॉग में ऑडियो शेयर करना चालू करें',
+    cloudNote: 'ऑडियो Google को भेजा जाता है',
+    waiting: 'आवाज़ का इंतज़ार है',
+    pipShowing: 'सबटाइटल छोटी विंडो में दिख रहे हैं',
+    unpop: 'टैब पर वापस लाएँ',
+    notice: 'यह पेज कंप्यूटर पर Chrome के नए वर्ज़न में खोलें',
+    share: 'X पर शेयर करें',
+    follow: 'बनाने वाले को फ़ॉलो करें',
+    links: 'शेयर और फ़ॉलो',
+    history: 'इतिहास',
+    clear: 'मिटाएँ',
+    sameLang: 'बोली और सबटाइटल के लिए अलग-अलग भाषाएँ चुनें',
+    pairUnavailable: 'इस भाषा जोड़ी का अनुवाद नहीं हो सकता',
+    localUnavailable: 'डिवाइस पर आवाज़ पहचान इस भाषा को सपोर्ट नहीं करती। क्लाउड पर जाएँ।',
+    checkFailed: 'सपोर्ट की जाँच नहीं हो सकी ({e})',
+    firstDownload: 'एक बार डाउनलोड करना ज़रूरी है',
+    ready: 'तैयार है',
+    installFailed: 'आवाज़ पहचान पैक नहीं मिल सका',
+    prepareFailed: 'तैयारी नहीं हो सकी ({e})',
+    pickScreen: 'शेयर करने के लिए स्क्रीन चुनें',
+    cancelled: 'स्क्रीन शेयर करना रद्द किया गया',
+    shareFailed: 'स्क्रीन शेयर नहीं हो सकी ({e})',
+    noAudio: 'कोई ऑडियो शेयर नहीं हो रहा',
+    ended: 'स्क्रीन शेयर करना बंद हो गया',
+    modelFailed: 'अनुवाद मॉडल लोड नहीं हो सका ({e})',
+    stopped: 'अनुवाद रोक दिया गया',
+    srFailed: 'आवाज़ पहचान शुरू नहीं हो सकी ({e})',
+    notAllowed: 'आवाज़ पहचान की अनुमति नहीं है',
+    serviceNotAllowed: 'यह आवाज़ पहचान उपलब्ध नहीं है। पहचान का तरीका बदलें।',
+    langNotSupported: 'आवाज़ पहचान इस भाषा को सपोर्ट नहीं करती',
+    audioCapture: 'शेयर की गई स्क्रीन से ऑडियो नहीं मिल सका',
+    network: 'आवाज़ पहचान सेवा से कनेक्ट नहीं हो सका। नेटवर्क जाँचें या डिवाइस पर पहचान पर जाएँ।',
+    untranslated: '(अनुवाद नहीं हो सका)',
+    popFailed: 'छोटी विंडो नहीं खुल सकी ({e})',
+    demo: ['आइए नई सुविधाएँ देखते हैं', 'यही वह हिस्सा है जिसका सबको इंतज़ार था', 'आज की मीटिंग में शामिल होने के लिए धन्यवाद'],
+  },
+  id: {
+    name: 'Bahasa Indonesia',
+    title: 'Tolk | Terjemahkan audio layar menjadi subtitle langsung',
+    tagline: 'Terjemahkan audio layar menjadi subtitle langsung',
+    uiLang: 'Bahasa tampilan',
+    src: 'Bahasa yang diucapkan',
+    tgt: 'Bahasa subtitle',
+    swap: 'Tukar bahasa',
+    engine: 'Pengenalan suara',
+    local: 'Di perangkat',
+    cloud: 'Cloud',
+    stage: 'Subtitle',
+    live: 'Menerjemahkan',
+    pop: 'Jendela mengambang',
+    stop: 'Hentikan',
+    start: 'Pilih layar untuk diterjemahkan',
+    starting: 'Memilih layar',
+    getModel: 'Unduh model terjemahan',
+    getSpeech: 'Unduh paket suara',
+    preparingModel: 'Menyiapkan model terjemahan',
+    downloadingModel: 'Mengunduh model terjemahan {p}%',
+    downloadingSpeech: 'Mengunduh paket suara',
+    hint: 'Di dialog berbagi, aktifkan berbagi audio',
+    cloudNote: 'Audio dikirim ke Google',
+    waiting: 'Menunggu audio',
+    pipShowing: 'Subtitle ditampilkan di jendela mengambang',
+    unpop: 'Kembali ke tab',
+    notice: 'Buka halaman ini di Chrome versi terbaru pada komputer',
+    share: 'Bagikan ke X',
+    follow: 'Ikuti pembuat',
+    links: 'Bagikan dan ikuti',
+    history: 'Riwayat',
+    clear: 'Hapus',
+    sameLang: 'Pilih bahasa yang berbeda untuk ucapan dan subtitle',
+    pairUnavailable: 'Pasangan bahasa ini tidak bisa diterjemahkan',
+    localUnavailable: 'Pengenalan di perangkat tidak mendukung bahasa ini. Beralih ke Cloud.',
+    checkFailed: 'Tidak dapat memeriksa dukungan ({e})',
+    firstDownload: 'Perlu unduhan sekali saja',
+    ready: 'Siap',
+    installFailed: 'Tidak dapat mengambil paket suara',
+    prepareFailed: 'Persiapan gagal ({e})',
+    pickScreen: 'Pilih layar yang akan dibagikan',
+    cancelled: 'Berbagi layar dibatalkan',
+    shareFailed: 'Tidak dapat membagikan layar ({e})',
+    noAudio: 'Tidak ada audio yang dibagikan',
+    ended: 'Berbagi layar berakhir',
+    modelFailed: 'Tidak dapat memuat model terjemahan ({e})',
+    stopped: 'Terjemahan dihentikan',
+    srFailed: 'Tidak dapat memulai pengenalan suara ({e})',
+    notAllowed: 'Pengenalan suara tidak diizinkan',
+    serviceNotAllowed: 'Pengenalan suara ini tidak tersedia. Ganti mode pengenalan.',
+    langNotSupported: 'Pengenalan suara tidak mendukung bahasa ini',
+    audioCapture: 'Tidak dapat mengambil audio dari layar yang dibagikan',
+    network: 'Tidak dapat terhubung ke layanan pengenalan suara. Periksa jaringan atau beralih ke Di perangkat.',
+    untranslated: '(Tidak dapat diterjemahkan)',
+    popFailed: 'Tidak dapat membuka jendela mengambang ({e})',
+    demo: ['Mari kita lihat fitur-fitur barunya', 'Inilah bagian yang sudah ditunggu-tunggu semua orang', 'Terima kasih sudah bergabung dalam rapat hari ini'],
+  },
+  vi: {
+    name: 'Tiếng Việt',
+    title: 'Tolk | Dịch âm thanh trên màn hình thành phụ đề trực tiếp',
+    tagline: 'Dịch âm thanh trên màn hình thành phụ đề trực tiếp',
+    uiLang: 'Ngôn ngữ giao diện',
+    src: 'Ngôn ngữ nói',
+    tgt: 'Ngôn ngữ phụ đề',
+    swap: 'Đổi ngôn ngữ',
+    engine: 'Nhận dạng giọng nói',
+    local: 'Trên thiết bị',
+    cloud: 'Đám mây',
+    stage: 'Phụ đề',
+    live: 'Đang dịch',
+    pop: 'Cửa sổ nổi',
+    stop: 'Dừng',
+    start: 'Chọn màn hình để dịch',
+    starting: 'Đang chọn màn hình',
+    getModel: 'Tải mô hình dịch',
+    getSpeech: 'Tải gói giọng nói',
+    preparingModel: 'Đang chuẩn bị mô hình dịch',
+    downloadingModel: 'Đang tải mô hình dịch {p}%',
+    downloadingSpeech: 'Đang tải gói giọng nói',
+    hint: 'Trong hộp thoại chia sẻ, hãy bật chia sẻ âm thanh',
+    cloudNote: 'Âm thanh được gửi đến Google',
+    waiting: 'Đang chờ âm thanh',
+    pipShowing: 'Phụ đề đang hiển thị trong cửa sổ nổi',
+    unpop: 'Quay lại thẻ',
+    notice: 'Hãy mở trang này bằng Chrome mới nhất trên máy tính',
+    share: 'Chia sẻ lên X',
+    follow: 'Theo dõi tác giả',
+    links: 'Chia sẻ và theo dõi',
+    history: 'Lịch sử',
+    clear: 'Xóa',
+    sameLang: 'Hãy chọn ngôn ngữ khác nhau cho lời nói và phụ đề',
+    pairUnavailable: 'Không thể dịch cặp ngôn ngữ này',
+    localUnavailable: 'Nhận dạng trên thiết bị không hỗ trợ ngôn ngữ này. Hãy chuyển sang Đám mây.',
+    checkFailed: 'Không thể kiểm tra khả năng hỗ trợ ({e})',
+    firstDownload: 'Cần tải xuống một lần',
+    ready: 'Đã sẵn sàng',
+    installFailed: 'Không thể tải gói giọng nói',
+    prepareFailed: 'Chuẩn bị thất bại ({e})',
+    pickScreen: 'Hãy chọn màn hình để chia sẻ',
+    cancelled: 'Đã hủy chia sẻ màn hình',
+    shareFailed: 'Không thể chia sẻ màn hình ({e})',
+    noAudio: 'Không có âm thanh nào được chia sẻ',
+    ended: 'Đã kết thúc chia sẻ màn hình',
+    modelFailed: 'Không thể tải mô hình dịch ({e})',
+    stopped: 'Đã dừng dịch',
+    srFailed: 'Không thể bắt đầu nhận dạng giọng nói ({e})',
+    notAllowed: 'Nhận dạng giọng nói không được cho phép',
+    serviceNotAllowed: 'Không dùng được nhận dạng giọng nói này. Hãy đổi cách nhận dạng.',
+    langNotSupported: 'Nhận dạng giọng nói không hỗ trợ ngôn ngữ này',
+    audioCapture: 'Không lấy được âm thanh từ màn hình đã chia sẻ',
+    network: 'Không kết nối được dịch vụ nhận dạng giọng nói. Hãy kiểm tra mạng hoặc chuyển sang Trên thiết bị.',
+    untranslated: '(Không dịch được)',
+    popFailed: 'Không mở được cửa sổ nổi ({e})',
+    demo: ['Hãy cùng xem các tính năng mới', 'Đây là phần mà mọi người đã chờ đợi', 'Cảm ơn mọi người đã tham gia cuộc họp hôm nay'],
+  },
+  th: {
+    name: 'ไทย',
+    title: 'Tolk | แปลเสียงบนหน้าจอเป็นคำบรรยายแบบสด',
+    tagline: 'แปลเสียงบนหน้าจอเป็นคำบรรยายแบบสด',
+    uiLang: 'ภาษาที่แสดง',
+    src: 'ภาษาที่พูด',
+    tgt: 'ภาษาคำบรรยาย',
+    swap: 'สลับภาษา',
+    engine: 'การจดจำเสียงพูด',
+    local: 'ในอุปกรณ์',
+    cloud: 'คลาวด์',
+    stage: 'คำบรรยาย',
+    live: 'กำลังแปล',
+    pop: 'หน้าต่างลอย',
+    stop: 'หยุด',
+    start: 'เลือกหน้าจอเพื่อแปล',
+    starting: 'กำลังเลือกหน้าจอ',
+    getModel: 'ดาวน์โหลดโมเดลการแปล',
+    getSpeech: 'ดาวน์โหลดชุดเสียงพูด',
+    preparingModel: 'กำลังเตรียมโมเดลการแปล',
+    downloadingModel: 'กำลังดาวน์โหลดโมเดลการแปล {p}%',
+    downloadingSpeech: 'กำลังดาวน์โหลดชุดเสียงพูด',
+    hint: 'ในหน้าต่างแชร์ ให้เปิดการแชร์เสียง',
+    cloudNote: 'เสียงจะถูกส่งไปยัง Google',
+    waiting: 'กำลังรอเสียง',
+    pipShowing: 'คำบรรยายแสดงอยู่ในหน้าต่างลอย',
+    unpop: 'กลับไปที่แท็บ',
+    notice: 'เปิดหน้านี้ด้วย Chrome เวอร์ชันล่าสุดบนคอมพิวเตอร์',
+    share: 'แชร์บน X',
+    follow: 'ติดตามผู้สร้าง',
+    links: 'แชร์และติดตาม',
+    history: 'ประวัติ',
+    clear: 'ล้าง',
+    sameLang: 'เลือกภาษาที่พูดและภาษาคำบรรยายให้ต่างกัน',
+    pairUnavailable: 'แปลคู่ภาษานี้ไม่ได้',
+    localUnavailable: 'การจดจำในอุปกรณ์ไม่รองรับภาษานี้ โปรดเปลี่ยนเป็นคลาวด์',
+    checkFailed: 'ตรวจสอบการรองรับไม่ได้ ({e})',
+    firstDownload: 'ต้องดาวน์โหลดเพียงครั้งแรกครั้งเดียว',
+    ready: 'พร้อมแล้ว',
+    installFailed: 'รับชุดเสียงพูดไม่ได้',
+    prepareFailed: 'เตรียมไม่สำเร็จ ({e})',
+    pickScreen: 'เลือกหน้าจอที่จะแชร์',
+    cancelled: 'ยกเลิกการแชร์หน้าจอแล้ว',
+    shareFailed: 'แชร์หน้าจอไม่ได้ ({e})',
+    noAudio: 'ไม่มีการแชร์เสียง',
+    ended: 'การแชร์หน้าจอสิ้นสุดแล้ว',
+    modelFailed: 'โหลดโมเดลการแปลไม่ได้ ({e})',
+    stopped: 'หยุดแปลแล้ว',
+    srFailed: 'เริ่มการจดจำเสียงพูดไม่ได้ ({e})',
+    notAllowed: 'ไม่ได้รับอนุญาตให้จดจำเสียงพูด',
+    serviceNotAllowed: 'ใช้การจดจำเสียงพูดนี้ไม่ได้ โปรดเปลี่ยนวิธีจดจำ',
+    langNotSupported: 'การจดจำเสียงพูดไม่รองรับภาษานี้',
+    audioCapture: 'รับเสียงจากหน้าจอที่แชร์ไม่ได้',
+    network: 'เชื่อมต่อบริการจดจำเสียงพูดไม่ได้ โปรดตรวจสอบเครือข่าย หรือเปลี่ยนเป็นในอุปกรณ์',
+    untranslated: '(แปลไม่ได้)',
+    popFailed: 'เปิดหน้าต่างลอยไม่ได้ ({e})',
+    demo: ['มาดูฟีเจอร์ใหม่กันเลย', 'นี่คือช่วงที่ทุกคนรอคอย', 'ขอบคุณที่เข้าร่วมการประชุมวันนี้'],
+  },
+  ar: {
+    name: 'العربية',
+    title: 'Tolk | ترجم صوت الشاشة إلى ترجمة نصية مباشرة',
+    tagline: 'ترجم صوت الشاشة إلى ترجمة نصية مباشرة',
+    uiLang: 'لغة الواجهة',
+    src: 'اللغة المنطوقة',
+    tgt: 'لغة الترجمة النصية',
+    swap: 'تبديل اللغتين',
+    engine: 'التعرّف على الكلام',
+    local: 'على الجهاز',
+    cloud: 'السحابة',
+    stage: 'الترجمة النصية',
+    live: 'جارٍ الترجمة',
+    pop: 'نافذة عائمة',
+    stop: 'إيقاف',
+    start: 'اختر شاشة لترجمتها',
+    starting: 'جارٍ اختيار الشاشة',
+    getModel: 'تنزيل نموذج الترجمة',
+    getSpeech: 'تنزيل حزمة الكلام',
+    preparingModel: 'جارٍ تجهيز نموذج الترجمة',
+    downloadingModel: 'جارٍ تنزيل نموذج الترجمة {p}%',
+    downloadingSpeech: 'جارٍ تنزيل حزمة الكلام',
+    hint: 'في نافذة المشاركة، فعّل مشاركة الصوت',
+    cloudNote: 'يُرسل الصوت إلى Google',
+    waiting: 'في انتظار الصوت',
+    pipShowing: 'تظهر الترجمة النصية في نافذة عائمة',
+    unpop: 'العودة إلى علامة التبويب',
+    notice: 'افتح هذه الصفحة في أحدث إصدار من Chrome على الكمبيوتر',
+    share: 'مشاركة على X',
+    follow: 'تابع المطوّر',
+    links: 'المشاركة والمتابعة',
+    history: 'السجل',
+    clear: 'مسح',
+    sameLang: 'اختر لغتين مختلفتين للكلام والترجمة النصية',
+    pairUnavailable: 'لا يمكن ترجمة هذا الزوج من اللغات',
+    localUnavailable: 'التعرّف على الجهاز لا يدعم هذه اللغة. انتقل إلى السحابة.',
+    checkFailed: 'تعذّر التحقق من الدعم ({e})',
+    firstDownload: 'يلزم تنزيل لمرة واحدة',
+    ready: 'جاهز',
+    installFailed: 'تعذّر الحصول على حزمة الكلام',
+    prepareFailed: 'تعذّر التجهيز ({e})',
+    pickScreen: 'اختر الشاشة التي تريد مشاركتها',
+    cancelled: 'أُلغيت مشاركة الشاشة',
+    shareFailed: 'تعذّرت مشاركة الشاشة ({e})',
+    noAudio: 'لا تتم مشاركة أي صوت',
+    ended: 'انتهت مشاركة الشاشة',
+    modelFailed: 'تعذّر تحميل نموذج الترجمة ({e})',
+    stopped: 'توقفت الترجمة',
+    srFailed: 'تعذّر بدء التعرّف على الكلام ({e})',
+    notAllowed: 'التعرّف على الكلام غير مسموح به',
+    serviceNotAllowed: 'هذا التعرّف على الكلام غير متاح. غيّر طريقة التعرّف.',
+    langNotSupported: 'التعرّف على الكلام لا يدعم هذه اللغة',
+    audioCapture: 'تعذّر الحصول على الصوت من الشاشة المشتركة',
+    network: 'تعذّر الاتصال بخدمة التعرّف على الكلام. تحقّق من الشبكة أو انتقل إلى «على الجهاز».',
+    untranslated: '(تعذّرت الترجمة)',
+    popFailed: 'تعذّر فتح النافذة العائمة ({e})',
+    demo: ['لنلقِ نظرة على الميزات الجديدة', 'هذا هو الجزء الذي ينتظره الجميع', 'شكرًا لانضمامكم إلى اجتماع اليوم'],
+  },
+  tr: {
+    name: 'Türkçe',
+    title: 'Tolk | Ekrandaki sesi canlı altyazıya çevir',
+    tagline: 'Ekrandaki sesi canlı altyazıya çevir',
+    uiLang: 'Arayüz dili',
+    src: 'Konuşulan dil',
+    tgt: 'Altyazı dili',
+    swap: 'Dilleri değiştir',
+    engine: 'Konuşma tanıma',
+    local: 'Cihazda',
+    cloud: 'Bulut',
+    stage: 'Altyazı',
+    live: 'Çevriliyor',
+    pop: 'Küçük pencere',
+    stop: 'Durdur',
+    start: 'Çevrilecek ekranı seç',
+    starting: 'Ekran seçiliyor',
+    getModel: 'Çeviri modelini indir',
+    getSpeech: 'Konuşma paketini indir',
+    preparingModel: 'Çeviri modeli hazırlanıyor',
+    downloadingModel: 'Çeviri modeli indiriliyor %{p}',
+    downloadingSpeech: 'Konuşma paketi indiriliyor',
+    hint: 'Paylaşım penceresinde ses paylaşımını açın',
+    cloudNote: 'Ses Google’a gönderilir',
+    waiting: 'Ses bekleniyor',
+    pipShowing: 'Altyazılar küçük pencerede gösteriliyor',
+    unpop: 'Sekmeye dön',
+    notice: 'Bu sayfayı bilgisayarda Chrome’un en yeni sürümüyle açın',
+    share: 'X’te paylaş',
+    follow: 'Geliştiriciyi takip et',
+    links: 'Paylaş ve takip et',
+    history: 'Geçmiş',
+    clear: 'Temizle',
+    sameLang: 'Konuşma ve altyazı için farklı diller seçin',
+    pairUnavailable: 'Bu dil çifti çevrilemiyor',
+    localUnavailable: 'Cihazda tanıma bu dili desteklemiyor. Buluta geçin.',
+    checkFailed: 'Destek durumu kontrol edilemedi ({e})',
+    firstDownload: 'Tek seferlik indirme gerekiyor',
+    ready: 'Hazır',
+    installFailed: 'Konuşma paketi alınamadı',
+    prepareFailed: 'Hazırlık başarısız oldu ({e})',
+    pickScreen: 'Paylaşılacak ekranı seçin',
+    cancelled: 'Ekran paylaşımı iptal edildi',
+    shareFailed: 'Ekran paylaşılamadı ({e})',
+    noAudio: 'Ses paylaşılmıyor',
+    ended: 'Ekran paylaşımı sona erdi',
+    modelFailed: 'Çeviri modeli yüklenemedi ({e})',
+    stopped: 'Çeviri durduruldu',
+    srFailed: 'Konuşma tanıma başlatılamadı ({e})',
+    notAllowed: 'Konuşma tanımaya izin verilmedi',
+    serviceNotAllowed: 'Bu konuşma tanıma kullanılamıyor. Tanıma yöntemini değiştirin.',
+    langNotSupported: 'Konuşma tanıma bu dili desteklemiyor',
+    audioCapture: 'Paylaşılan ekrandan ses alınamadı',
+    network: 'Konuşma tanıma hizmetine bağlanılamıyor. Ağı kontrol edin veya Cihazda seçeneğine geçin.',
+    untranslated: '(Çevrilemedi)',
+    popFailed: 'Küçük pencere açılamadı ({e})',
+    demo: ['Hadi yeni özelliklere bir göz atalım', 'İşte herkesin beklediği bölüm', 'Bugünkü toplantıya katıldığınız için teşekkürler'],
+  },
+  nl: {
+    name: 'Nederlands',
+    title: 'Tolk | Vertaal schermaudio naar live ondertiteling',
+    tagline: 'Vertaal schermaudio naar live ondertiteling',
+    uiLang: 'Weergavetaal',
+    src: 'Gesproken taal',
+    tgt: 'Ondertitelingstaal',
+    swap: 'Talen omwisselen',
+    engine: 'Spraakherkenning',
+    local: 'Op apparaat',
+    cloud: 'Cloud',
+    stage: 'Ondertiteling',
+    live: 'Bezig met vertalen',
+    pop: 'Zwevend venster',
+    stop: 'Stoppen',
+    start: 'Kies een scherm om te vertalen',
+    starting: 'Scherm kiezen',
+    getModel: 'Vertaalmodel downloaden',
+    getSpeech: 'Spraakpakket downloaden',
+    preparingModel: 'Vertaalmodel voorbereiden',
+    downloadingModel: 'Vertaalmodel downloaden {p}%',
+    downloadingSpeech: 'Spraakpakket downloaden',
+    hint: 'Zet in het deelvenster het delen van audio aan',
+    cloudNote: 'Audio wordt naar Google gestuurd',
+    waiting: 'Wachten op audio',
+    pipShowing: 'De ondertiteling staat in een zwevend venster',
+    unpop: 'Terug naar tabblad',
+    notice: 'Open deze pagina in de nieuwste Chrome op een computer',
+    share: 'Delen op X',
+    follow: 'Volg de maker',
+    links: 'Delen en volgen',
+    history: 'Geschiedenis',
+    clear: 'Wissen',
+    sameLang: 'Kies verschillende talen voor spraak en ondertiteling',
+    pairUnavailable: 'Deze taalcombinatie kan niet worden vertaald',
+    localUnavailable: 'Herkenning op het apparaat ondersteunt deze taal niet. Schakel over naar Cloud.',
+    checkFailed: 'Ondersteuning kon niet worden gecontroleerd ({e})',
+    firstDownload: 'Eenmalige download nodig',
+    ready: 'Klaar',
+    installFailed: 'Spraakpakket kon niet worden opgehaald',
+    prepareFailed: 'Voorbereiden mislukt ({e})',
+    pickScreen: 'Kies het scherm dat je wilt delen',
+    cancelled: 'Scherm delen geannuleerd',
+    shareFailed: 'Scherm kon niet worden gedeeld ({e})',
+    noAudio: 'Er wordt geen audio gedeeld',
+    ended: 'Scherm delen is gestopt',
+    modelFailed: 'Vertaalmodel kon niet worden geladen ({e})',
+    stopped: 'Vertalen gestopt',
+    srFailed: 'Spraakherkenning kon niet starten ({e})',
+    notAllowed: 'Spraakherkenning is niet toegestaan',
+    serviceNotAllowed: 'Deze spraakherkenning is niet beschikbaar. Kies een andere herkenningsmethode.',
+    langNotSupported: 'Spraakherkenning ondersteunt deze taal niet',
+    audioCapture: 'Kon geen audio ophalen van het gedeelde scherm',
+    network: 'Kan de spraakherkenningsdienst niet bereiken. Controleer het netwerk of schakel over naar Op apparaat.',
+    untranslated: '(Kon niet vertalen)',
+    popFailed: 'Zwevend venster kon niet worden geopend ({e})',
+    demo: ['Laten we de nieuwe functies bekijken', 'Dit is het deel waar iedereen op heeft gewacht', 'Bedankt voor jullie deelname aan de vergadering van vandaag'],
+  },
+  pl: {
+    name: 'Polski',
+    title: 'Tolk | Tłumacz dźwięk z ekranu na napisy na żywo',
+    tagline: 'Tłumacz dźwięk z ekranu na napisy na żywo',
+    uiLang: 'Język interfejsu',
+    src: 'Język mówiony',
+    tgt: 'Język napisów',
+    swap: 'Zamień języki',
+    engine: 'Rozpoznawanie mowy',
+    local: 'Na urządzeniu',
+    cloud: 'Chmura',
+    stage: 'Napisy',
+    live: 'Tłumaczenie',
+    pop: 'Pływające okno',
+    stop: 'Zatrzymaj',
+    start: 'Wybierz ekran do tłumaczenia',
+    starting: 'Wybieranie ekranu',
+    getModel: 'Pobierz model tłumaczenia',
+    getSpeech: 'Pobierz pakiet mowy',
+    preparingModel: 'Przygotowywanie modelu tłumaczenia',
+    downloadingModel: 'Pobieranie modelu tłumaczenia {p}%',
+    downloadingSpeech: 'Pobieranie pakietu mowy',
+    hint: 'W oknie udostępniania włącz udostępnianie dźwięku',
+    cloudNote: 'Dźwięk jest wysyłany do Google',
+    waiting: 'Czekam na dźwięk',
+    pipShowing: 'Napisy są w pływającym oknie',
+    unpop: 'Wróć do karty',
+    notice: 'Otwórz tę stronę w najnowszym Chrome na komputerze',
+    share: 'Udostępnij na X',
+    follow: 'Obserwuj twórcę',
+    links: 'Udostępnij i obserwuj',
+    history: 'Historia',
+    clear: 'Wyczyść',
+    sameLang: 'Wybierz różne języki mowy i napisów',
+    pairUnavailable: 'Tej pary języków nie można przetłumaczyć',
+    localUnavailable: 'Rozpoznawanie na urządzeniu nie obsługuje tego języka. Przełącz na chmurę.',
+    checkFailed: 'Nie udało się sprawdzić obsługi ({e})',
+    firstDownload: 'Potrzebne jest jednorazowe pobranie',
+    ready: 'Gotowe',
+    installFailed: 'Nie udało się pobrać pakietu mowy',
+    prepareFailed: 'Przygotowanie nie powiodło się ({e})',
+    pickScreen: 'Wybierz ekran do udostępnienia',
+    cancelled: 'Anulowano udostępnianie ekranu',
+    shareFailed: 'Nie udało się udostępnić ekranu ({e})',
+    noAudio: 'Dźwięk nie jest udostępniany',
+    ended: 'Udostępnianie ekranu zakończone',
+    modelFailed: 'Nie udało się wczytać modelu tłumaczenia ({e})',
+    stopped: 'Tłumaczenie zatrzymane',
+    srFailed: 'Nie udało się uruchomić rozpoznawania mowy ({e})',
+    notAllowed: 'Rozpoznawanie mowy jest niedozwolone',
+    serviceNotAllowed: 'To rozpoznawanie mowy jest niedostępne. Zmień tryb rozpoznawania.',
+    langNotSupported: 'Rozpoznawanie mowy nie obsługuje tego języka',
+    audioCapture: 'Nie udało się pobrać dźwięku z udostępnionego ekranu',
+    network: 'Brak połączenia z usługą rozpoznawania mowy. Sprawdź sieć lub przełącz na rozpoznawanie na urządzeniu.',
+    untranslated: '(Nie udało się przetłumaczyć)',
+    popFailed: 'Nie udało się otworzyć pływającego okna ({e})',
+    demo: ['Przyjrzyjmy się nowym funkcjom', 'Oto część, na którą wszyscy czekali', 'Dziękuję za udział w dzisiejszym spotkaniu'],
+  },
+  uk: {
+    name: 'Українська',
+    title: 'Tolk | Переклад звуку з екрана в субтитри наживо',
+    tagline: 'Переклад звуку з екрана в субтитри наживо',
+    uiLang: 'Мова інтерфейсу',
+    src: 'Мова мовлення',
+    tgt: 'Мова субтитрів',
+    swap: 'Поміняти мови',
+    engine: 'Розпізнавання мовлення',
+    local: 'На пристрої',
+    cloud: 'Хмара',
+    stage: 'Субтитри',
+    live: 'Триває переклад',
+    pop: 'Окреме вікно',
+    stop: 'Зупинити',
+    start: 'Вибрати екран для перекладу',
+    starting: 'Вибір екрана',
+    getModel: 'Завантажити модель перекладу',
+    getSpeech: 'Завантажити мовний пакет',
+    preparingModel: 'Підготовка моделі перекладу',
+    downloadingModel: 'Завантаження моделі перекладу {p}%',
+    downloadingSpeech: 'Завантаження мовного пакета',
+    hint: 'У вікні демонстрації ввімкніть передавання звуку',
+    cloudNote: 'Звук надсилається в Google',
+    waiting: 'Очікування звуку',
+    pipShowing: 'Субтитри показано в окремому вікні',
+    unpop: 'Повернути у вкладку',
+    notice: 'Відкрийте цю сторінку в найновішому Chrome на комп’ютері',
+    share: 'Поширити в X',
+    follow: 'Стежити за автором',
+    links: 'Поширити й стежити',
+    history: 'Історія',
+    clear: 'Очистити',
+    sameLang: 'Виберіть різні мови для мовлення і субтитрів',
+    pairUnavailable: 'Цю пару мов неможливо перекласти',
+    localUnavailable: 'Розпізнавання на пристрої не підтримує цю мову. Перейдіть на хмару.',
+    checkFailed: 'Не вдалося перевірити підтримку ({e})',
+    firstDownload: 'Потрібне одноразове завантаження',
+    ready: 'Готово',
+    installFailed: 'Не вдалося отримати мовний пакет',
+    prepareFailed: 'Не вдалося підготувати ({e})',
+    pickScreen: 'Виберіть екран для демонстрації',
+    cancelled: 'Демонстрацію екрана скасовано',
+    shareFailed: 'Не вдалося почати демонстрацію екрана ({e})',
+    noAudio: 'Звук не передається',
+    ended: 'Демонстрацію екрана завершено',
+    modelFailed: 'Не вдалося завантажити модель перекладу ({e})',
+    stopped: 'Переклад зупинено',
+    srFailed: 'Не вдалося запустити розпізнавання мовлення ({e})',
+    notAllowed: 'Розпізнавання мовлення не дозволено',
+    serviceNotAllowed: 'Це розпізнавання мовлення недоступне. Змініть спосіб розпізнавання.',
+    langNotSupported: 'Розпізнавання мовлення не підтримує цю мову',
+    audioCapture: 'Не вдалося отримати звук з екрана, який демонструється',
+    network: 'Не вдається підключитися до служби розпізнавання мовлення. Перевірте мережу або перейдіть на розпізнавання на пристрої.',
+    untranslated: '(Не вдалося перекласти)',
+    popFailed: 'Не вдалося відкрити окреме вікно ({e})',
+    demo: ['Погляньмо на нові функції', 'Ось частина, на яку всі чекали', 'Дякуємо, що долучилися до сьогоднішньої зустрічі'],
+  },
+};
+
 const FATAL_ERRORS = {
-  'not-allowed': '音声認識が許可されていません',
-  'service-not-allowed': 'この音声認識は利用できません。音声認識の方式を切り替えてください。',
-  'language-not-supported': 'この言語の音声認識には対応していません',
-  'audio-capture': '共有した画面から音声を取得できませんでした',
+  'not-allowed': 'notAllowed',
+  'service-not-allowed': 'serviceNotAllowed',
+  'language-not-supported': 'langNotSupported',
+  'audio-capture': 'audioCapture',
 };
 const STORAGE_KEY = 'screen-translator.v2';
+const SHARE_URL = 'https://noxelwork.com/tolk';
 const RESTART_DELAY_MS = 250;
 const MAX_NETWORK_ERRORS = 5;
 const MAX_SOURCE_LINES = 2;
@@ -518,21 +1713,21 @@ const MAX_LAG_MS = 8000;
 const PIP_SIZE = { width: 720, height: 240 };
 const BREAK_AFTER = /^[、。，．,.!?！？;；:：]+$/;
 const NO_PIECE_START = /^[\s、。，．,.!?！？;；:：）」』]*/;
-const DEMO = [
-  ["Let's take a look at the new features", '新しい機能を見ていきましょう'],
-  ['This is the part everyone has been waiting for', 'みなさんお待ちかねの部分です'],
-  ["Thanks for joining today's meeting", '本日の会議にご参加いただきありがとうございます'],
-];
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const supported = !document.documentElement.classList.contains('unsupported');
 const $ = (id) => document.getElementById(id);
+const uiSel = $('uiLang'), shareLink = $('shareLink');
 const controls = $('controls'), srcSel = $('src'), tgtSel = $('tgt'), swapBtn = $('swap');
 const engineInputs = [...document.querySelectorAll('[name="engine"]')];
 const stage = $('stage'), stageHome = $('stageHome'), pipNote = $('pipNote');
 const actionBtn = $('action'), actionLabel = $('actionLabel'), statusEl = $('status');
 const popBtn = $('pop'), unpopBtn = $('unpop'), clearBtn = $('clear');
 const capTr = $('capTr'), capSrc = $('capSrc'), logEl = $('log'), clockEl = $('clock'), meterEl = $('meter');
+const demoTr = $('demoTr'), demoSrc = $('demoSrc');
 
+let ui = 'ja';
+let status = { state: 'idle', key: '', vars: {} };
 let translator = null;
 let stream = null;
 let recognition = null;
@@ -552,6 +1747,8 @@ let audioCtx = null;
 let analyser = null;
 let meterSource = null;
 let meterToken = 0;
+let demoIndex = 0;
+let demoToken = 0;
 
 const finals = [];
 let translating = false;
@@ -562,14 +1759,64 @@ let captionTimer = null;
 let captionWin = window;
 let holdUntil = 0;
 
+const t = (key, vars = {}) => (I18N[ui][key] ?? I18N.en[key]).replace(/\{(\w+)\}/g, (_, name) => vars[name] ?? '');
+const htmlLang = (code) => (code === 'zh' ? 'zh-Hans' : code);
 const engine = () => engineInputs.find((input) => input.checked)?.value ?? 'cloud';
 const pair = () => ({ sourceLanguage: srcSel.value, targetLanguage: tgtSel.value });
 const locale = () => LOCALES.get(srcSel.value);
 const stageWindow = () => stage.ownerDocument.defaultView;
 
-function setStatus(state, text = '') {
+function setStatus(state, key = '', vars = {}) {
+  status = { state, key, vars };
   statusEl.dataset.state = state;
-  statusEl.textContent = text;
+  statusEl.textContent = key ? t(key, vars) : '';
+}
+
+function detectLanguage(saved) {
+  if (I18N[saved]) return saved;
+  for (const tag of navigator.languages ?? [navigator.language]) {
+    try {
+      const { language, script } = new Intl.Locale(tag).maximize();
+      const code = language === 'zh' && script === 'Hant' ? 'zh-Hant' : language;
+      if (I18N[code]) return code;
+    } catch {}
+  }
+  return 'en';
+}
+
+function applyLanguage(code) {
+  ui = code;
+  for (const doc of [document, pipWindow?.document]) {
+    if (!doc) continue;
+    doc.documentElement.lang = htmlLang(code);
+    doc.documentElement.dir = code === 'ar' ? 'rtl' : 'ltr';
+  }
+  document.title = t('title');
+  for (const root of [document, stage]) {
+    for (const el of root.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
+    for (const el of root.querySelectorAll('[data-i18n-label]')) el.setAttribute('aria-label', t(el.dataset.i18nLabel));
+  }
+  stage.setAttribute('aria-label', t('stage'));
+  shareLink.href = `https://x.com/intent/tweet?text=${encodeURIComponent(t('title'))}&url=${encodeURIComponent(SHARE_URL)}`;
+  uiSel.value = code;
+  if (supported) {
+    nameLanguages();
+    setStatus(status.state, status.key, status.vars);
+    render();
+  } else {
+    showDemo(0);
+  }
+}
+
+function nameLanguages() {
+  const lang = htmlLang(ui);
+  const names = new Intl.DisplayNames([lang], { type: 'language' });
+  for (const sel of [srcSel, tgtSel]) {
+    for (const option of sel.options) {
+      const name = names.of(option.value);
+      option.textContent = name.charAt(0).toLocaleUpperCase(lang) + name.slice(1);
+    }
+  }
 }
 
 function render() {
@@ -581,20 +1828,19 @@ function render() {
   controls.disabled = running || busy;
   actionBtn.disabled = busy || blocked;
 
-  const item = pendingStep === 'speech' ? '音声認識パック' : '翻訳モデル';
   let icon = 'share';
-  let label = '画面を選んで翻訳を始める';
+  let label = t('start');
   if (view === 'starting') {
     icon = 'spin';
-    label = '画面を選んでいます';
+    label = t('starting');
   } else if (view === 'download') {
     icon = 'none';
     label = typeof progress === 'number'
-      ? `${item}をダウンロード中 ${Math.floor(progress * 10) * 10}%`
-      : `${item}をダウンロード中`;
+      ? t('downloadingModel', { p: Math.floor(progress * 10) * 10 })
+      : t('downloadingSpeech');
   } else if (pendingStep) {
     icon = 'download';
-    label = `${item}を準備する`;
+    label = t(pendingStep === 'speech' ? 'getSpeech' : 'getModel');
   }
   actionBtn.dataset.icon = icon;
   actionLabel.textContent = label;
@@ -611,9 +1857,10 @@ async function check() {
   render();
 
   let problem = null;
+  let vars = {};
   let step = null;
   if (srcSel.value === tgtSel.value) {
-    problem = '話されている言語と字幕の言語を別々に選んでください';
+    problem = 'sameLang';
   } else {
     try {
       const translation = translator ? 'available' : await Translator.availability(pair());
@@ -621,12 +1868,13 @@ async function check() {
         ? await SR.available({ langs: [locale()], processLocally: true })
         : 'available';
       if (id !== checkId) return;
-      if (translation === 'unavailable') problem = 'この言語の組み合わせは翻訳できません';
-      else if (speech === 'unavailable') problem = 'この言語は端末内の音声認識に対応していません。クラウドに切り替えてください。';
+      if (translation === 'unavailable') problem = 'pairUnavailable';
+      else if (speech === 'unavailable') problem = 'localUnavailable';
       else step = translation !== 'available' ? 'translator' : speech !== 'available' ? 'speech' : null;
     } catch (e) {
       if (id !== checkId) return;
-      problem = `対応状況を確認できませんでした（${e.message}）`;
+      problem = 'checkFailed';
+      vars = { e: e.message };
     }
   }
 
@@ -634,9 +1882,9 @@ async function check() {
   checked = true;
   pendingStep = step;
   blocked = Boolean(problem);
-  if (problem) setStatus('error', problem);
-  else if (step) setStatus('note', '初回のみダウンロードが必要です');
-  else setStatus('ready', '準備ができました');
+  if (problem) setStatus('error', problem, vars);
+  else if (step) setStatus('note', 'firstDownload');
+  else setStatus('ready', 'ready');
   render();
 }
 
@@ -646,27 +1894,27 @@ async function prepare() {
   render();
   try {
     if (pendingStep === 'translator') {
-      setStatus('busy', '翻訳モデルを準備中');
+      setStatus('busy', 'preparingModel');
       translator = await Translator.create({
         ...pair(),
         monitor(m) {
           m.addEventListener('downloadprogress', (e) => {
             progress = e.loaded;
-            const text = `翻訳モデルをダウンロード中 ${Math.floor(e.loaded * 10) * 10}%`;
-            if (statusEl.textContent !== text) setStatus('busy', text);
+            const p = Math.floor(e.loaded * 10) * 10;
+            if (status.key !== 'downloadingModel' || status.vars.p !== p) setStatus('busy', 'downloadingModel', { p });
             render();
           });
         },
       });
     } else {
-      setStatus('busy', '音声認識パックをダウンロード中');
+      setStatus('busy', 'downloadingSpeech');
       const installed = await SR.install({ langs: [locale()], processLocally: true });
-      if (!installed) throw new Error('音声認識パックを入手できませんでした');
+      if (!installed) throw new Error(t('installFailed'));
     }
   } catch (e) {
     busy = false;
     progress = null;
-    setStatus('error', `準備に失敗しました（${e.message}）`);
+    setStatus('error', 'prepareFailed', { e: e.message });
     render();
     return;
   }
@@ -679,7 +1927,7 @@ async function start() {
   audioCtx ??= new AudioContext();
   audioCtx.resume().catch(() => {});
   busy = true;
-  setStatus('busy', '共有する画面を選んでください');
+  setStatus('busy', 'pickScreen');
   render();
 
   // Keep Tolk in front after a tab is shared, so the subtitles can be popped out right away.
@@ -696,24 +1944,24 @@ async function start() {
       controller,
     });
   } catch (e) {
-    if (e.name === 'NotAllowedError') stop('画面の共有をキャンセルしました');
-    else stop(`画面を共有できませんでした（${e.message}）`, 'error');
+    if (e.name === 'NotAllowedError') stop('cancelled');
+    else stop('shareFailed', 'error', { e: e.message });
     return;
   }
 
   const current = stream;
   const [track] = stream.getAudioTracks();
   if (!track) {
-    stop('音声が共有されていません', 'error');
+    stop('noAudio', 'error');
     return;
   }
   stream.getVideoTracks().forEach((t) => t.stop());
-  track.addEventListener('ended', () => stop('画面の共有が終わりました', 'note'));
+  track.addEventListener('ended', () => stop('ended', 'note'));
 
   try {
     translator ??= await Translator.create(pair());
   } catch (e) {
-    if (stream === current) stop(`翻訳モデルを読み込めませんでした（${e.message}）`, 'error');
+    if (stream === current) stop('modelFailed', 'error', { e: e.message });
     return;
   }
   if (stream !== current) return;
@@ -723,13 +1971,13 @@ async function start() {
   session++;
   networkErrors = 0;
   startedAt = Date.now();
-  setStatus('live', '翻訳中');
+  setStatus('live', 'live');
   startMeter(track);
   render();
   listen(track);
 }
 
-function stop(text = '翻訳を止めました', state = 'ready') {
+function stop(key = 'stopped', state = 'ready', vars = {}) {
   running = false;
   busy = false;
   recognition?.abort();
@@ -739,7 +1987,7 @@ function stop(text = '翻訳を止めました', state = 'ready') {
   stopMeter();
   pipWindow?.close();
   clearCaptions();
-  setStatus(state, text);
+  setStatus(state, key, vars);
   render();
 }
 
@@ -756,7 +2004,7 @@ function listen(track) {
     try {
       rec.start(track);
     } catch (e) {
-      stop(`音声認識を始められませんでした（${e.message}）`, 'error');
+      stop('srFailed', 'error', { e: e.message });
     }
   };
 
@@ -774,9 +2022,7 @@ function listen(track) {
   rec.onerror = (e) => {
     if (recognition !== rec) return;
     if (FATAL_ERRORS[e.error]) stop(FATAL_ERRORS[e.error], 'error');
-    else if (e.error === 'network' && ++networkErrors >= MAX_NETWORK_ERRORS) {
-      stop('音声認識サービスに接続できません。ネットワークを確認するか、端末内の音声認識に切り替えてください。', 'error');
-    }
+    else if (e.error === 'network' && ++networkErrors >= MAX_NETWORK_ERRORS) stop('network', 'error');
   };
   rec.onend = () => setTimeout(begin, RESTART_DELAY_MS);
 
@@ -936,7 +2182,7 @@ function commit(text) {
     text,
     done(out) {
       translated.classList.remove('pending');
-      translated.textContent = out ?? '（翻訳できませんでした）';
+      translated.textContent = out ?? t('untranslated');
       if (out !== null && running && id === session) queueCaption(out);
     },
   });
@@ -962,7 +2208,7 @@ function languageChanged() {
   translator = null;
   capSrc.lang = srcSel.value;
   capTr.lang = tgtSel.value;
-  savePrefs();
+  savePrefs({ src: srcSel.value, tgt: tgtSel.value });
   check();
 }
 
@@ -974,18 +2220,16 @@ function loadPrefs() {
   }
 }
 
-function savePrefs() {
+function savePrefs(changes) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ src: srcSel.value, tgt: tgtSel.value, engine: engine() }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...loadPrefs(), ...changes }));
   } catch {}
 }
 
-function initControls() {
-  const names = new Intl.DisplayNames(['ja'], { type: 'language' });
+function initControls(prefs) {
   for (const sel of [srcSel, tgtSel]) {
-    for (const code of LOCALES.keys()) sel.add(new Option(names.of(code), code));
+    for (const code of LOCALES.keys()) sel.add(new Option(code, code));
   }
-  const prefs = loadPrefs();
   const own = new Intl.Locale(navigator.language).maximize();
   const ownCode = own.script === 'Hant' ? 'zh-Hant' : own.language;
   const defaultTgt = LOCALES.has(ownCode) ? ownCode : 'en';
@@ -1003,7 +2247,8 @@ function initControls() {
 async function popOut() {
   try {
     const pip = await documentPictureInPicture.requestWindow(PIP_SIZE);
-    pip.document.documentElement.lang = 'ja';
+    pip.document.documentElement.lang = document.documentElement.lang;
+    pip.document.documentElement.dir = document.documentElement.dir;
     pip.document.title = 'Tolk';
     pip.document.head.append(
       ...[...document.querySelectorAll('style, link[rel="stylesheet"]')].map((node) => node.cloneNode(true)),
@@ -1018,7 +2263,7 @@ async function popOut() {
     pipWindow = pip;
     stageMoved();
   } catch (e) {
-    setStatus('error', `小窓を開けませんでした（${e.message}）`);
+    setStatus('error', 'popFailed', { e: e.message });
   }
 }
 
@@ -1028,31 +2273,64 @@ function stageMoved() {
   render();
 }
 
+// The demo shows speech in another language turning into subtitles in the display language.
+function demoPair(i) {
+  return [(ui === 'en' ? I18N.ja : I18N.en).demo[i], I18N[ui].demo[i]];
+}
+
+function showDemo(i) {
+  demoToken++;
+  demoIndex = i;
+  const [source, translation] = demoPair(i);
+  demoSrc.lang = ui === 'en' ? 'ja' : 'en';
+  demoSrc.textContent = source;
+  demoTr.lang = htmlLang(ui);
+  demoTr.textContent = translation;
+}
+
 function playDemo() {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const tr = document.querySelector('.sample .tr');
-  const src = document.querySelector('.sample .src');
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   (async () => {
-    for (let i = 1; ; i = (i + 1) % DEMO.length) {
+    for (;;) {
+      const token = demoToken;
       await wait(2600);
-      const [source, translation] = DEMO[i];
-      const words = source.split(' ');
-      for (let n = 1; n <= words.length; n++) {
-        src.textContent = words.slice(0, n).join(' ');
+      if (token !== demoToken) continue;
+      const next = (demoIndex + 1) % I18N[ui].demo.length;
+      const [source, translation] = demoPair(next);
+      let typed = '';
+      for (const { segment, isWordLike } of new Intl.Segmenter(demoSrc.lang, { granularity: 'word' }).segment(source)) {
+        typed += segment;
+        if (!isWordLike) continue;
+        demoSrc.textContent = typed;
         await wait(160);
+        if (token !== demoToken) break;
       }
+      if (token !== demoToken) continue;
+      demoSrc.textContent = source;
       await wait(300);
-      tr.textContent = translation;
-      tr.animate([{ opacity: 0, transform: 'translateY(.15em)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+      if (token !== demoToken) continue;
+      demoIndex = next;
+      demoTr.textContent = translation;
+      demoTr.animate([{ opacity: 0, transform: 'translateY(.15em)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.22, 1, .36, 1)' });
     }
   })();
 }
 
-if (document.documentElement.classList.contains('unsupported')) {
-  playDemo();
-} else {
-  initControls();
+const prefs = loadPrefs();
+for (const code of LOCALES.keys()) {
+  const option = new Option(I18N[code].name, code);
+  option.lang = htmlLang(code);
+  uiSel.add(option);
+}
+uiSel.addEventListener('change', () => {
+  applyLanguage(uiSel.value);
+  savePrefs({ ui: uiSel.value });
+});
+
+if (supported) {
+  initControls(prefs);
+  applyLanguage(detectLanguage(prefs.ui));
   actionBtn.addEventListener('click', () => {
     if (checking || busy || running) return;
     if (pendingStep) prepare();
@@ -1062,7 +2340,7 @@ if (document.documentElement.classList.contains('unsupported')) {
   tgtSel.addEventListener('change', languageChanged);
   for (const input of engineInputs) {
     input.addEventListener('change', () => {
-      savePrefs();
+      savePrefs({ engine: engine() });
       check();
     });
   }
@@ -1075,8 +2353,10 @@ if (document.documentElement.classList.contains('unsupported')) {
   unpopBtn.addEventListener('click', () => pipWindow?.close());
   for (const button of [$('stop'), $('stop2')]) button.addEventListener('click', () => stop());
   clearBtn.addEventListener('click', () => logEl.replaceChildren());
-  render();
   check();
+} else {
+  applyLanguage(detectLanguage(prefs.ui));
+  playDemo();
 }
 </script>
 </body>
