@@ -201,12 +201,11 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
   text-align: center;
   container-type: inline-size;
 }
-.stage > :where(.bar, #action, #hint, #cloudNote, #plamoNote, #waiting, .caption, .sample) { display: none; }
+.stage > :where(.bar, #action, #hint, #plamoNote, #waiting, .caption, .sample) { display: none; }
 .stage:not([data-view="live"])[data-mt="plamo"] > #plamoNote { display: block; }
 .stage:not([data-view="live"]) > #action { display: inline-flex; }
 .stage[data-view="checking"] > #action { opacity: 0; pointer-events: none; }
 .stage:is([data-view="idle"], [data-view="starting"]):not([data-step], [data-blocked]) > #hint { display: flex; }
-.stage[data-view="idle"][data-engine="cloud"]:not([data-step], [data-blocked]) > #cloudNote { display: flex; }
 .stage[data-view="live"] > :is(.bar, .caption) { display: flex; }
 .stage[data-view="live"]:has(#capTr:empty):has(#capSrc:empty) > .caption { display: none; }
 .stage[data-view="live"]:has(#capTr:empty):has(#capSrc:empty) > #waiting { display: block; }
@@ -277,8 +276,6 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
 .stage[data-view="starting"] > #hint { color: var(--text); }
 .switch { position: relative; flex: none; width: 1.875rem; height: 1.125rem; border-radius: 999px; background: var(--brand); }
 .switch::after { content: ""; position: absolute; top: .1875rem; inset-inline-end: .1875rem; width: .75rem; height: .75rem; border-radius: 50%; background: var(--on-brand); }
-#cloudNote { align-items: center; gap: .5rem; font-size: .9375rem; color: var(--muted); }
-#cloudNote .icon { width: 1rem; height: 1rem; }
 #plamoNote a { font-size: .875rem; color: var(--muted); text-underline-offset: .2em; }
 #plamoNote a:hover { color: var(--text); }
 
@@ -468,8 +465,8 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
         <div class="engine" role="radiogroup" aria-labelledby="engineLabel">
           <span id="engineLabel" data-i18n="engine">音声認識</span>
           <div class="segmented">
-            <label><input type="radio" name="engine" value="local"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span data-i18n="local">端末内</span></label>
-            <label><input type="radio" name="engine" value="cloud"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg><span data-i18n="cloud">クラウド</span></label>
+            <label><input type="radio" name="engine" value="chrome">Chrome</label>
+            <label><input type="radio" name="engine" value="whisper">Whisper</label>
           </div>
         </div>
         <div class="engine" role="radiogroup" aria-labelledby="mtLabel">
@@ -500,7 +497,6 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
         </button>
         <p id="status" role="status"></p>
         <p id="hint"><span class="switch" aria-hidden="true"></span><span data-i18n="hint">共有ダイアログで「音声も共有する」をオンにしてください</span></p>
-        <p id="cloudNote"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg><span data-i18n="cloudNote">音声は Google に送信されます</span></p>
         <p id="plamoNote"><a id="plamoLink" href="https://plamo.preferredai.jp/info/plamo-community-license-ja" target="_blank" rel="noopener noreferrer">Built with PLaMo</a></p>
         <p id="waiting" data-i18n="waiting">音声を待っています</p>
         <div id="capTr" class="caption tr"></div>
@@ -555,13 +551,15 @@ const I18N = {
     tgt: '字幕の言語',
     swap: '言語を入れ替える',
     engine: '音声認識',
-    local: '端末内',
-    cloud: 'クラウド',
     translation: '翻訳',
     getPlamo: 'PLaMo をダウンロード（570MB）',
     downloadingPlamo: 'PLaMo をダウンロード中 {p}%',
     loadingPlamo: 'PLaMo を読み込み中',
     plamoUnsupported: 'PLaMo は{l}に対応していません。翻訳を Chrome に切り替えてください。',
+    getWhisper: 'Whisper をダウンロード（560MB）',
+    downloadingWhisper: 'Whisper をダウンロード中 {p}%',
+    loadingWhisper: 'Whisper を読み込み中',
+    whisperNoGpu: 'Whisper を使うには WebGPU が必要です。音声認識を Chrome に切り替えてください。',
     stage: '字幕',
     live: '翻訳中',
     pop: '小窓で表示',
@@ -574,7 +572,6 @@ const I18N = {
     downloadingModel: '翻訳モデルをダウンロード中 {p}%',
     downloadingSpeech: '音声認識パックをダウンロード中',
     hint: '共有ダイアログで「音声も共有する」をオンにしてください',
-    cloudNote: '音声は Google に送信されます',
     waiting: '音声を待っています',
     pipShowing: '字幕を小窓に表示しています',
     unpop: 'タブに戻す',
@@ -586,7 +583,7 @@ const I18N = {
     clear: '消す',
     sameLang: '話されている言語と字幕の言語を別々に選んでください',
     pairUnavailable: 'この言語の組み合わせは翻訳できません',
-    localUnavailable: 'この言語は端末内の音声認識に対応していません。クラウドに切り替えてください。',
+    localUnavailable: 'この言語は Chrome の音声認識に対応していません。Whisper に切り替えてください。',
     checkFailed: '対応状況を確認できませんでした（{e}）',
     firstDownload: '初回のみダウンロードが必要です',
     ready: '準備ができました',
@@ -604,7 +601,6 @@ const I18N = {
     serviceNotAllowed: 'この音声認識は利用できません。音声認識の方式を切り替えてください。',
     langNotSupported: 'この言語の音声認識には対応していません',
     audioCapture: '共有した画面から音声を取得できませんでした',
-    network: '音声認識サービスに接続できません。ネットワークを確認するか、端末内の音声認識に切り替えてください。',
     untranslated: '（翻訳できませんでした）',
     popFailed: '小窓を開けませんでした（{e}）',
     demo: ['新しい機能を見ていきましょう', 'みなさんお待ちかねの部分です', '本日の会議にご参加いただきありがとうございます'],
@@ -618,13 +614,15 @@ const I18N = {
     tgt: 'Subtitle language',
     swap: 'Swap languages',
     engine: 'Speech recognition',
-    local: 'On device',
-    cloud: 'Cloud',
     translation: 'Translation',
     getPlamo: 'Download PLaMo (570 MB)',
     downloadingPlamo: 'Downloading PLaMo {p}%',
     loadingPlamo: 'Loading PLaMo',
     plamoUnsupported: 'PLaMo doesn’t support {l}. Switch translation to Chrome.',
+    getWhisper: 'Download Whisper (560 MB)',
+    downloadingWhisper: 'Downloading Whisper {p}%',
+    loadingWhisper: 'Loading Whisper',
+    whisperNoGpu: 'Whisper needs WebGPU. Switch speech recognition to Chrome.',
     stage: 'Subtitles',
     live: 'Translating',
     pop: 'Pop out',
@@ -637,7 +635,6 @@ const I18N = {
     downloadingModel: 'Downloading the translation model {p}%',
     downloadingSpeech: 'Downloading the speech pack',
     hint: 'In the share dialog, turn on audio sharing',
-    cloudNote: 'Audio is sent to Google',
     waiting: 'Waiting for audio',
     pipShowing: 'Subtitles are showing in a pop-out window',
     unpop: 'Back to tab',
@@ -649,7 +646,7 @@ const I18N = {
     clear: 'Clear',
     sameLang: 'Choose different languages for speech and subtitles',
     pairUnavailable: 'This language pair can’t be translated',
-    localUnavailable: 'On-device recognition doesn’t support this language. Switch to Cloud.',
+    localUnavailable: 'Chrome speech recognition doesn’t support this language. Switch to Whisper.',
     checkFailed: 'Couldn’t check language support ({e})',
     firstDownload: 'A one-time download is needed',
     ready: 'Ready',
@@ -667,7 +664,6 @@ const I18N = {
     serviceNotAllowed: 'This speech recognition isn’t available. Switch the recognition mode.',
     langNotSupported: 'Speech recognition doesn’t support this language',
     audioCapture: 'Couldn’t get audio from the shared screen',
-    network: 'Can’t reach the speech recognition service. Check your network or switch to On device.',
     untranslated: '(Couldn’t translate)',
     popFailed: 'Couldn’t open the pop-out window ({e})',
     demo: ['Let’s take a look at the new features', 'This is the part everyone has been waiting for', 'Thanks for joining today’s meeting'],
@@ -681,13 +677,15 @@ const I18N = {
     tgt: '字幕语言',
     swap: '交换语言',
     engine: '语音识别',
-    local: '本机',
-    cloud: '云端',
     translation: '翻译',
     getPlamo: '下载 PLaMo（570MB）',
     downloadingPlamo: '正在下载 PLaMo {p}%',
     loadingPlamo: '正在加载 PLaMo',
     plamoUnsupported: 'PLaMo 不支持{l}，请将翻译切换为 Chrome。',
+    getWhisper: '下载 Whisper（560MB）',
+    downloadingWhisper: '正在下载 Whisper {p}%',
+    loadingWhisper: '正在加载 Whisper',
+    whisperNoGpu: 'Whisper 需要 WebGPU，请将语音识别切换为 Chrome。',
     stage: '字幕',
     live: '翻译中',
     pop: '小窗显示',
@@ -700,7 +698,6 @@ const I18N = {
     downloadingModel: '正在下载翻译模型 {p}%',
     downloadingSpeech: '正在下载语音识别包',
     hint: '请在共享对话框中开启音频共享',
-    cloudNote: '音频将发送给 Google',
     waiting: '正在等待声音',
     pipShowing: '字幕正在小窗中显示',
     unpop: '返回标签页',
@@ -712,7 +709,7 @@ const I18N = {
     clear: '清除',
     sameLang: '请为说话语言和字幕语言选择不同的语言',
     pairUnavailable: '无法翻译此语言组合',
-    localUnavailable: '本机语音识别不支持此语言，请切换到云端。',
+    localUnavailable: 'Chrome 语音识别不支持此语言，请切换到 Whisper。',
     checkFailed: '无法确认支持情况（{e}）',
     firstDownload: '首次使用需要下载',
     ready: '已就绪',
@@ -730,7 +727,6 @@ const I18N = {
     serviceNotAllowed: '此语音识别不可用，请切换识别方式。',
     langNotSupported: '语音识别不支持此语言',
     audioCapture: '无法从共享的屏幕获取音频',
-    network: '无法连接语音识别服务。请检查网络，或切换到本机语音识别。',
     untranslated: '（无法翻译）',
     popFailed: '无法打开小窗（{e}）',
     demo: ['我们来看看新功能', '这就是大家期待已久的部分', '感谢大家参加今天的会议'],
@@ -744,13 +740,15 @@ const I18N = {
     tgt: '字幕語言',
     swap: '交換語言',
     engine: '語音辨識',
-    local: '本機',
-    cloud: '雲端',
     translation: '翻譯',
     getPlamo: '下載 PLaMo（570MB）',
     downloadingPlamo: '正在下載 PLaMo {p}%',
     loadingPlamo: '正在載入 PLaMo',
     plamoUnsupported: 'PLaMo 不支援{l}，請將翻譯切換為 Chrome。',
+    getWhisper: '下載 Whisper（560MB）',
+    downloadingWhisper: '正在下載 Whisper {p}%',
+    loadingWhisper: '正在載入 Whisper',
+    whisperNoGpu: 'Whisper 需要 WebGPU，請將語音辨識切換為 Chrome。',
     stage: '字幕',
     live: '翻譯中',
     pop: '小視窗顯示',
@@ -763,7 +761,6 @@ const I18N = {
     downloadingModel: '正在下載翻譯模型 {p}%',
     downloadingSpeech: '正在下載語音辨識套件',
     hint: '請在分享對話框中開啟音訊分享',
-    cloudNote: '音訊會傳送給 Google',
     waiting: '正在等待聲音',
     pipShowing: '字幕正在小視窗中顯示',
     unpop: '回到分頁',
@@ -775,7 +772,7 @@ const I18N = {
     clear: '清除',
     sameLang: '請為說話語言和字幕語言選擇不同的語言',
     pairUnavailable: '無法翻譯這個語言組合',
-    localUnavailable: '本機語音辨識不支援這個語言，請切換到雲端。',
+    localUnavailable: 'Chrome 語音辨識不支援這個語言，請切換到 Whisper。',
     checkFailed: '無法確認支援狀況（{e}）',
     firstDownload: '第一次使用需要下載',
     ready: '準備就緒',
@@ -793,7 +790,6 @@ const I18N = {
     serviceNotAllowed: '無法使用這個語音辨識，請切換辨識方式。',
     langNotSupported: '語音辨識不支援這個語言',
     audioCapture: '無法從分享的畫面取得音訊',
-    network: '無法連線到語音辨識服務。請檢查網路，或切換到本機語音辨識。',
     untranslated: '（無法翻譯）',
     popFailed: '無法開啟小視窗（{e}）',
     demo: ['我們來看看新功能', '這就是大家期待已久的部分', '感謝大家參加今天的會議'],
@@ -807,13 +803,15 @@ const I18N = {
     tgt: '자막 언어',
     swap: '언어 바꾸기',
     engine: '음성 인식',
-    local: '기기 내',
-    cloud: '클라우드',
     translation: '번역',
     getPlamo: 'PLaMo 다운로드(570MB)',
     downloadingPlamo: 'PLaMo 다운로드 중 {p}%',
     loadingPlamo: 'PLaMo 불러오는 중',
     plamoUnsupported: 'PLaMo는 {l} 번역을 지원하지 않습니다. 번역을 Chrome으로 바꿔 주세요.',
+    getWhisper: 'Whisper 다운로드(560MB)',
+    downloadingWhisper: 'Whisper 다운로드 중 {p}%',
+    loadingWhisper: 'Whisper 불러오는 중',
+    whisperNoGpu: 'Whisper를 사용하려면 WebGPU가 필요합니다. 음성 인식을 Chrome으로 바꿔 주세요.',
     stage: '자막',
     live: '번역 중',
     pop: '작은 창으로 보기',
@@ -826,7 +824,6 @@ const I18N = {
     downloadingModel: '번역 모델 다운로드 중 {p}%',
     downloadingSpeech: '음성 인식 팩 다운로드 중',
     hint: '공유 대화상자에서 오디오 공유를 켜 주세요',
-    cloudNote: '오디오가 Google로 전송됩니다',
     waiting: '소리를 기다리는 중',
     pipShowing: '자막을 작은 창에 표시하고 있습니다',
     unpop: '탭으로 돌아가기',
@@ -838,7 +835,7 @@ const I18N = {
     clear: '지우기',
     sameLang: '말하는 언어와 자막 언어를 서로 다르게 선택해 주세요',
     pairUnavailable: '이 언어 조합은 번역할 수 없습니다',
-    localUnavailable: '기기 내 음성 인식은 이 언어를 지원하지 않습니다. 클라우드로 전환해 주세요.',
+    localUnavailable: 'Chrome 음성 인식은 이 언어를 지원하지 않습니다. Whisper로 전환해 주세요.',
     checkFailed: '지원 여부를 확인하지 못했습니다 ({e})',
     firstDownload: '처음 한 번만 다운로드가 필요합니다',
     ready: '준비되었습니다',
@@ -856,7 +853,6 @@ const I18N = {
     serviceNotAllowed: '이 음성 인식은 사용할 수 없습니다. 인식 방식을 바꿔 주세요.',
     langNotSupported: '이 언어의 음성 인식은 지원되지 않습니다',
     audioCapture: '공유한 화면에서 오디오를 가져오지 못했습니다',
-    network: '음성 인식 서비스에 연결할 수 없습니다. 네트워크를 확인하거나 기기 내 음성 인식으로 전환해 주세요.',
     untranslated: '(번역하지 못했습니다)',
     popFailed: '작은 창을 열지 못했습니다 ({e})',
     demo: ['새로운 기능을 살펴보겠습니다', '모두가 기다려 온 부분입니다', '오늘 회의에 참석해 주셔서 감사합니다'],
@@ -870,13 +866,15 @@ const I18N = {
     tgt: 'Idioma de los subtítulos',
     swap: 'Intercambiar idiomas',
     engine: 'Reconocimiento de voz',
-    local: 'En el dispositivo',
-    cloud: 'Nube',
     translation: 'Traducción',
     getPlamo: 'Descargar PLaMo (570 MB)',
     downloadingPlamo: 'Descargando PLaMo {p} %',
     loadingPlamo: 'Cargando PLaMo',
     plamoUnsupported: 'PLaMo no admite el idioma {l}. Cambia la traducción a Chrome.',
+    getWhisper: 'Descargar Whisper (560 MB)',
+    downloadingWhisper: 'Descargando Whisper {p} %',
+    loadingWhisper: 'Cargando Whisper',
+    whisperNoGpu: 'Whisper necesita WebGPU. Cambia el reconocimiento de voz a Chrome.',
     stage: 'Subtítulos',
     live: 'Traduciendo',
     pop: 'Ventana flotante',
@@ -889,7 +887,6 @@ const I18N = {
     downloadingModel: 'Descargando el modelo de traducción {p} %',
     downloadingSpeech: 'Descargando el paquete de voz',
     hint: 'En el cuadro para compartir, activa compartir audio',
-    cloudNote: 'El audio se envía a Google',
     waiting: 'Esperando audio',
     pipShowing: 'Los subtítulos se muestran en una ventana flotante',
     unpop: 'Volver a la pestaña',
@@ -901,7 +898,7 @@ const I18N = {
     clear: 'Borrar',
     sameLang: 'Elige idiomas distintos para la voz y los subtítulos',
     pairUnavailable: 'No se puede traducir esta combinación de idiomas',
-    localUnavailable: 'El reconocimiento en el dispositivo no admite este idioma. Cambia a Nube.',
+    localUnavailable: 'El reconocimiento de voz de Chrome no admite este idioma. Cambia a Whisper.',
     checkFailed: 'No se pudo comprobar la compatibilidad ({e})',
     firstDownload: 'Se necesita una descarga única',
     ready: 'Listo',
@@ -919,7 +916,6 @@ const I18N = {
     serviceNotAllowed: 'Este reconocimiento de voz no está disponible. Cambia el modo de reconocimiento.',
     langNotSupported: 'El reconocimiento de voz no admite este idioma',
     audioCapture: 'No se pudo obtener audio de la pantalla compartida',
-    network: 'No se puede conectar con el servicio de reconocimiento de voz. Revisa la red o cambia a En el dispositivo.',
     untranslated: '(No se pudo traducir)',
     popFailed: 'No se pudo abrir la ventana flotante ({e})',
     demo: ['Echemos un vistazo a las nuevas funciones', 'Esta es la parte que todos estaban esperando', 'Gracias por unirse a la reunión de hoy'],
@@ -933,13 +929,15 @@ const I18N = {
     tgt: 'Langue des sous-titres',
     swap: 'Inverser les langues',
     engine: 'Reconnaissance vocale',
-    local: 'Sur l’appareil',
-    cloud: 'Cloud',
     translation: 'Traduction',
     getPlamo: 'Télécharger PLaMo (570 Mo)',
     downloadingPlamo: 'Téléchargement de PLaMo {p} %',
     loadingPlamo: 'Chargement de PLaMo',
     plamoUnsupported: 'PLaMo ne prend pas en charge la langue {l}. Passez la traduction à Chrome.',
+    getWhisper: 'Télécharger Whisper (560 Mo)',
+    downloadingWhisper: 'Téléchargement de Whisper {p} %',
+    loadingWhisper: 'Chargement de Whisper',
+    whisperNoGpu: 'Whisper nécessite WebGPU. Passez la reconnaissance vocale à Chrome.',
     stage: 'Sous-titres',
     live: 'Traduction en cours',
     pop: 'Fenêtre flottante',
@@ -952,7 +950,6 @@ const I18N = {
     downloadingModel: 'Téléchargement du modèle de traduction {p} %',
     downloadingSpeech: 'Téléchargement du pack vocal',
     hint: 'Dans la fenêtre de partage, activez le partage audio',
-    cloudNote: 'L’audio est envoyé à Google',
     waiting: 'En attente d’audio',
     pipShowing: 'Les sous-titres s’affichent dans une fenêtre flottante',
     unpop: 'Revenir à l’onglet',
@@ -964,7 +961,7 @@ const I18N = {
     clear: 'Effacer',
     sameLang: 'Choisissez des langues différentes pour la voix et les sous-titres',
     pairUnavailable: 'Impossible de traduire cette paire de langues',
-    localUnavailable: 'La reconnaissance sur l’appareil ne prend pas en charge cette langue. Passez au cloud.',
+    localUnavailable: 'La reconnaissance vocale de Chrome ne prend pas en charge cette langue. Passez à Whisper.',
     checkFailed: 'Impossible de vérifier la compatibilité ({e})',
     firstDownload: 'Un téléchargement unique est nécessaire',
     ready: 'Prêt',
@@ -982,7 +979,6 @@ const I18N = {
     serviceNotAllowed: 'Cette reconnaissance vocale n’est pas disponible. Changez de mode de reconnaissance.',
     langNotSupported: 'La reconnaissance vocale ne prend pas en charge cette langue',
     audioCapture: 'Impossible d’obtenir l’audio de l’écran partagé',
-    network: 'Impossible de joindre le service de reconnaissance vocale. Vérifiez le réseau ou passez à Sur l’appareil.',
     untranslated: '(Traduction impossible)',
     popFailed: 'Impossible d’ouvrir la fenêtre flottante ({e})',
     demo: ['Découvrons les nouvelles fonctionnalités', 'Voici le moment que tout le monde attendait', 'Merci d’avoir rejoint la réunion d’aujourd’hui'],
@@ -996,13 +992,15 @@ const I18N = {
     tgt: 'Untertitelsprache',
     swap: 'Sprachen tauschen',
     engine: 'Spracherkennung',
-    local: 'Auf dem Gerät',
-    cloud: 'Cloud',
     translation: 'Übersetzung',
     getPlamo: 'PLaMo herunterladen (570 MB)',
     downloadingPlamo: 'PLaMo wird geladen {p} %',
     loadingPlamo: 'PLaMo wird gestartet',
     plamoUnsupported: 'PLaMo unterstützt {l} nicht. Stelle die Übersetzung auf Chrome um.',
+    getWhisper: 'Whisper herunterladen (560 MB)',
+    downloadingWhisper: 'Whisper wird geladen {p} %',
+    loadingWhisper: 'Whisper wird gestartet',
+    whisperNoGpu: 'Whisper benötigt WebGPU. Stelle die Spracherkennung auf Chrome um.',
     stage: 'Untertitel',
     live: 'Übersetzung läuft',
     pop: 'Bild-im-Bild',
@@ -1015,7 +1013,6 @@ const I18N = {
     downloadingModel: 'Übersetzungsmodell wird geladen {p} %',
     downloadingSpeech: 'Sprachpaket wird geladen',
     hint: 'Aktiviere im Freigabedialog die Audiofreigabe',
-    cloudNote: 'Audio wird an Google gesendet',
     waiting: 'Warte auf Audio',
     pipShowing: 'Die Untertitel werden im Bild-im-Bild-Fenster angezeigt',
     unpop: 'Zurück zum Tab',
@@ -1027,7 +1024,7 @@ const I18N = {
     clear: 'Löschen',
     sameLang: 'Wähle für Ton und Untertitel verschiedene Sprachen',
     pairUnavailable: 'Diese Sprachkombination kann nicht übersetzt werden',
-    localUnavailable: 'Die Erkennung auf dem Gerät unterstützt diese Sprache nicht. Wechsle zu Cloud.',
+    localUnavailable: 'Die Spracherkennung von Chrome unterstützt diese Sprache nicht. Wechsle zu Whisper.',
     checkFailed: 'Unterstützung konnte nicht geprüft werden ({e})',
     firstDownload: 'Ein einmaliger Download ist nötig',
     ready: 'Bereit',
@@ -1045,7 +1042,6 @@ const I18N = {
     serviceNotAllowed: 'Diese Spracherkennung ist nicht verfügbar. Wechsle die Erkennungsart.',
     langNotSupported: 'Die Spracherkennung unterstützt diese Sprache nicht',
     audioCapture: 'Vom geteilten Bildschirm kam kein Audio',
-    network: 'Der Spracherkennungsdienst ist nicht erreichbar. Prüfe das Netzwerk oder wechsle zu „Auf dem Gerät“.',
     untranslated: '(Nicht übersetzt)',
     popFailed: 'Bild-im-Bild-Fenster konnte nicht geöffnet werden ({e})',
     demo: ['Schauen wir uns die neuen Funktionen an', 'Das ist der Teil, auf den alle gewartet haben', 'Danke für die Teilnahme am heutigen Meeting'],
@@ -1059,13 +1055,15 @@ const I18N = {
     tgt: 'Lingua dei sottotitoli',
     swap: 'Scambia le lingue',
     engine: 'Riconoscimento vocale',
-    local: 'Sul dispositivo',
-    cloud: 'Cloud',
     translation: 'Traduzione',
     getPlamo: 'Scarica PLaMo (570 MB)',
     downloadingPlamo: 'Download di PLaMo {p}%',
     loadingPlamo: 'Caricamento di PLaMo',
     plamoUnsupported: 'PLaMo non supporta la lingua {l}. Passa la traduzione a Chrome.',
+    getWhisper: 'Scarica Whisper (560 MB)',
+    downloadingWhisper: 'Download di Whisper {p}%',
+    loadingWhisper: 'Caricamento di Whisper',
+    whisperNoGpu: 'Whisper richiede WebGPU. Passa il riconoscimento vocale a Chrome.',
     stage: 'Sottotitoli',
     live: 'Traduzione in corso',
     pop: 'Finestra mobile',
@@ -1078,7 +1076,6 @@ const I18N = {
     downloadingModel: 'Download del modello di traduzione {p}%',
     downloadingSpeech: 'Download del pacchetto vocale',
     hint: 'Nella finestra di condivisione, attiva la condivisione dell’audio',
-    cloudNote: 'L’audio viene inviato a Google',
     waiting: 'In attesa dell’audio',
     pipShowing: 'I sottotitoli sono nella finestra mobile',
     unpop: 'Torna alla scheda',
@@ -1090,7 +1087,7 @@ const I18N = {
     clear: 'Cancella',
     sameLang: 'Scegli lingue diverse per il parlato e i sottotitoli',
     pairUnavailable: 'Questa coppia di lingue non può essere tradotta',
-    localUnavailable: 'Il riconoscimento sul dispositivo non supporta questa lingua. Passa al cloud.',
+    localUnavailable: 'Il riconoscimento vocale di Chrome non supporta questa lingua. Passa a Whisper.',
     checkFailed: 'Impossibile verificare la compatibilità ({e})',
     firstDownload: 'Serve un download una tantum',
     ready: 'Pronto',
@@ -1108,7 +1105,6 @@ const I18N = {
     serviceNotAllowed: 'Questo riconoscimento vocale non è disponibile. Cambia modalità di riconoscimento.',
     langNotSupported: 'Il riconoscimento vocale non supporta questa lingua',
     audioCapture: 'Impossibile ottenere l’audio dallo schermo condiviso',
-    network: 'Impossibile raggiungere il servizio di riconoscimento vocale. Controlla la rete o passa a Sul dispositivo.',
     untranslated: '(Traduzione non riuscita)',
     popFailed: 'Impossibile aprire la finestra mobile ({e})',
     demo: ['Diamo un’occhiata alle nuove funzioni', 'Ecco la parte che tutti stavano aspettando', 'Grazie per aver partecipato alla riunione di oggi'],
@@ -1122,13 +1118,15 @@ const I18N = {
     tgt: 'Idioma das legendas',
     swap: 'Trocar idiomas',
     engine: 'Reconhecimento de voz',
-    local: 'No dispositivo',
-    cloud: 'Nuvem',
     translation: 'Tradução',
     getPlamo: 'Baixar o PLaMo (570 MB)',
     downloadingPlamo: 'Baixando o PLaMo {p}%',
     loadingPlamo: 'Carregando o PLaMo',
     plamoUnsupported: 'O PLaMo não oferece suporte ao idioma {l}. Mude a tradução para Chrome.',
+    getWhisper: 'Baixar o Whisper (560 MB)',
+    downloadingWhisper: 'Baixando o Whisper {p}%',
+    loadingWhisper: 'Carregando o Whisper',
+    whisperNoGpu: 'O Whisper precisa de WebGPU. Mude o reconhecimento de voz para Chrome.',
     stage: 'Legendas',
     live: 'Traduzindo',
     pop: 'Janela flutuante',
@@ -1141,7 +1139,6 @@ const I18N = {
     downloadingModel: 'Baixando o modelo de tradução {p}%',
     downloadingSpeech: 'Baixando o pacote de voz',
     hint: 'Na caixa de compartilhamento, ative o compartilhamento de áudio',
-    cloudNote: 'O áudio é enviado ao Google',
     waiting: 'Aguardando áudio',
     pipShowing: 'As legendas estão na janela flutuante',
     unpop: 'Voltar para a guia',
@@ -1153,7 +1150,7 @@ const I18N = {
     clear: 'Limpar',
     sameLang: 'Escolha idiomas diferentes para a fala e as legendas',
     pairUnavailable: 'Não é possível traduzir este par de idiomas',
-    localUnavailable: 'O reconhecimento no dispositivo não é compatível com este idioma. Mude para Nuvem.',
+    localUnavailable: 'O reconhecimento de voz do Chrome não é compatível com este idioma. Mude para Whisper.',
     checkFailed: 'Não foi possível verificar a compatibilidade ({e})',
     firstDownload: 'É necessário um download único',
     ready: 'Pronto',
@@ -1171,7 +1168,6 @@ const I18N = {
     serviceNotAllowed: 'Este reconhecimento de voz não está disponível. Mude o modo de reconhecimento.',
     langNotSupported: 'O reconhecimento de voz não é compatível com este idioma',
     audioCapture: 'Não foi possível obter o áudio da tela compartilhada',
-    network: 'Não foi possível conectar ao serviço de reconhecimento de voz. Verifique a rede ou mude para No dispositivo.',
     untranslated: '(Não foi possível traduzir)',
     popFailed: 'Não foi possível abrir a janela flutuante ({e})',
     demo: ['Vamos dar uma olhada nos novos recursos', 'Esta é a parte que todos estavam esperando', 'Obrigado por participar da reunião de hoje'],
@@ -1185,13 +1181,15 @@ const I18N = {
     tgt: 'Язык субтитров',
     swap: 'Поменять языки',
     engine: 'Распознавание речи',
-    local: 'На устройстве',
-    cloud: 'Облако',
     translation: 'Перевод',
     getPlamo: 'Скачать PLaMo (570 МБ)',
     downloadingPlamo: 'Загрузка PLaMo {p}%',
     loadingPlamo: 'Запуск PLaMo',
     plamoUnsupported: 'PLaMo не поддерживает язык «{l}». Переключите перевод на Chrome.',
+    getWhisper: 'Скачать Whisper (560 МБ)',
+    downloadingWhisper: 'Загрузка Whisper {p}%',
+    loadingWhisper: 'Запуск Whisper',
+    whisperNoGpu: 'Для Whisper нужен WebGPU. Переключите распознавание речи на Chrome.',
     stage: 'Субтитры',
     live: 'Идёт перевод',
     pop: 'Отдельное окно',
@@ -1204,7 +1202,6 @@ const I18N = {
     downloadingModel: 'Загрузка модели перевода {p}%',
     downloadingSpeech: 'Загрузка речевого пакета',
     hint: 'В окне демонстрации включите передачу звука',
-    cloudNote: 'Звук отправляется в Google',
     waiting: 'Ожидание звука',
     pipShowing: 'Субтитры показаны в отдельном окне',
     unpop: 'Вернуть во вкладку',
@@ -1216,7 +1213,7 @@ const I18N = {
     clear: 'Очистить',
     sameLang: 'Выберите разные языки для речи и субтитров',
     pairUnavailable: 'Эту пару языков нельзя перевести',
-    localUnavailable: 'Распознавание на устройстве не поддерживает этот язык. Переключитесь на облако.',
+    localUnavailable: 'Распознавание речи Chrome не поддерживает этот язык. Переключитесь на Whisper.',
     checkFailed: 'Не удалось проверить поддержку ({e})',
     firstDownload: 'Нужна однократная загрузка',
     ready: 'Готово',
@@ -1234,7 +1231,6 @@ const I18N = {
     serviceNotAllowed: 'Это распознавание речи недоступно. Смените способ распознавания.',
     langNotSupported: 'Распознавание речи не поддерживает этот язык',
     audioCapture: 'Не удалось получить звук с демонстрируемого экрана',
-    network: 'Не удаётся подключиться к службе распознавания речи. Проверьте сеть или переключитесь на распознавание на устройстве.',
     untranslated: '(Не удалось перевести)',
     popFailed: 'Не удалось открыть отдельное окно ({e})',
     demo: ['Давайте посмотрим на новые функции', 'Вот та часть, которую все ждали', 'Спасибо, что присоединились к сегодняшней встрече'],
@@ -1248,13 +1244,15 @@ const I18N = {
     tgt: 'सबटाइटल की भाषा',
     swap: 'भाषाएँ बदलें',
     engine: 'आवाज़ पहचान',
-    local: 'डिवाइस पर',
-    cloud: 'क्लाउड',
     translation: 'अनुवाद',
     getPlamo: 'PLaMo डाउनलोड करें (570 MB)',
     downloadingPlamo: 'PLaMo डाउनलोड हो रहा है {p}%',
     loadingPlamo: 'PLaMo लोड हो रहा है',
     plamoUnsupported: 'PLaMo {l} को सपोर्ट नहीं करता। अनुवाद को Chrome पर बदलें।',
+    getWhisper: 'Whisper डाउनलोड करें (560 MB)',
+    downloadingWhisper: 'Whisper डाउनलोड हो रहा है {p}%',
+    loadingWhisper: 'Whisper लोड हो रहा है',
+    whisperNoGpu: 'Whisper के लिए WebGPU ज़रूरी है। आवाज़ पहचान को Chrome पर बदलें।',
     stage: 'सबटाइटल',
     live: 'अनुवाद हो रहा है',
     pop: 'छोटी विंडो में दिखाएँ',
@@ -1267,7 +1265,6 @@ const I18N = {
     downloadingModel: 'अनुवाद मॉडल डाउनलोड हो रहा है {p}%',
     downloadingSpeech: 'आवाज़ पहचान पैक डाउनलोड हो रहा है',
     hint: 'शेयर डायलॉग में ऑडियो शेयर करना चालू करें',
-    cloudNote: 'ऑडियो Google को भेजा जाता है',
     waiting: 'आवाज़ का इंतज़ार है',
     pipShowing: 'सबटाइटल छोटी विंडो में दिख रहे हैं',
     unpop: 'टैब पर वापस लाएँ',
@@ -1279,7 +1276,7 @@ const I18N = {
     clear: 'मिटाएँ',
     sameLang: 'बोली और सबटाइटल के लिए अलग-अलग भाषाएँ चुनें',
     pairUnavailable: 'इस भाषा जोड़ी का अनुवाद नहीं हो सकता',
-    localUnavailable: 'डिवाइस पर आवाज़ पहचान इस भाषा को सपोर्ट नहीं करती। क्लाउड पर जाएँ।',
+    localUnavailable: 'Chrome की आवाज़ पहचान इस भाषा को सपोर्ट नहीं करती। Whisper पर जाएँ।',
     checkFailed: 'सपोर्ट की जाँच नहीं हो सकी ({e})',
     firstDownload: 'एक बार डाउनलोड करना ज़रूरी है',
     ready: 'तैयार है',
@@ -1297,7 +1294,6 @@ const I18N = {
     serviceNotAllowed: 'यह आवाज़ पहचान उपलब्ध नहीं है। पहचान का तरीका बदलें।',
     langNotSupported: 'आवाज़ पहचान इस भाषा को सपोर्ट नहीं करती',
     audioCapture: 'शेयर की गई स्क्रीन से ऑडियो नहीं मिल सका',
-    network: 'आवाज़ पहचान सेवा से कनेक्ट नहीं हो सका। नेटवर्क जाँचें या डिवाइस पर पहचान पर जाएँ।',
     untranslated: '(अनुवाद नहीं हो सका)',
     popFailed: 'छोटी विंडो नहीं खुल सकी ({e})',
     demo: ['आइए नई सुविधाएँ देखते हैं', 'यही वह हिस्सा है जिसका सबको इंतज़ार था', 'आज की मीटिंग में शामिल होने के लिए धन्यवाद'],
@@ -1311,13 +1307,15 @@ const I18N = {
     tgt: 'Bahasa subtitle',
     swap: 'Tukar bahasa',
     engine: 'Pengenalan suara',
-    local: 'Di perangkat',
-    cloud: 'Cloud',
     translation: 'Terjemahan',
     getPlamo: 'Unduh PLaMo (570 MB)',
     downloadingPlamo: 'Mengunduh PLaMo {p}%',
     loadingPlamo: 'Memuat PLaMo',
     plamoUnsupported: 'PLaMo tidak mendukung bahasa {l}. Ubah terjemahan ke Chrome.',
+    getWhisper: 'Unduh Whisper (560 MB)',
+    downloadingWhisper: 'Mengunduh Whisper {p}%',
+    loadingWhisper: 'Memuat Whisper',
+    whisperNoGpu: 'Whisper memerlukan WebGPU. Ubah pengenalan suara ke Chrome.',
     stage: 'Subtitle',
     live: 'Menerjemahkan',
     pop: 'Jendela mengambang',
@@ -1330,7 +1328,6 @@ const I18N = {
     downloadingModel: 'Mengunduh model terjemahan {p}%',
     downloadingSpeech: 'Mengunduh paket suara',
     hint: 'Di dialog berbagi, aktifkan berbagi audio',
-    cloudNote: 'Audio dikirim ke Google',
     waiting: 'Menunggu audio',
     pipShowing: 'Subtitle ditampilkan di jendela mengambang',
     unpop: 'Kembali ke tab',
@@ -1342,7 +1339,7 @@ const I18N = {
     clear: 'Hapus',
     sameLang: 'Pilih bahasa yang berbeda untuk ucapan dan subtitle',
     pairUnavailable: 'Pasangan bahasa ini tidak bisa diterjemahkan',
-    localUnavailable: 'Pengenalan di perangkat tidak mendukung bahasa ini. Beralih ke Cloud.',
+    localUnavailable: 'Pengenalan suara Chrome tidak mendukung bahasa ini. Beralih ke Whisper.',
     checkFailed: 'Tidak dapat memeriksa dukungan ({e})',
     firstDownload: 'Perlu unduhan sekali saja',
     ready: 'Siap',
@@ -1360,7 +1357,6 @@ const I18N = {
     serviceNotAllowed: 'Pengenalan suara ini tidak tersedia. Ganti mode pengenalan.',
     langNotSupported: 'Pengenalan suara tidak mendukung bahasa ini',
     audioCapture: 'Tidak dapat mengambil audio dari layar yang dibagikan',
-    network: 'Tidak dapat terhubung ke layanan pengenalan suara. Periksa jaringan atau beralih ke Di perangkat.',
     untranslated: '(Tidak dapat diterjemahkan)',
     popFailed: 'Tidak dapat membuka jendela mengambang ({e})',
     demo: ['Mari kita lihat fitur-fitur barunya', 'Inilah bagian yang sudah ditunggu-tunggu semua orang', 'Terima kasih sudah bergabung dalam rapat hari ini'],
@@ -1374,13 +1370,15 @@ const I18N = {
     tgt: 'Ngôn ngữ phụ đề',
     swap: 'Đổi ngôn ngữ',
     engine: 'Nhận dạng giọng nói',
-    local: 'Trên thiết bị',
-    cloud: 'Đám mây',
     translation: 'Dịch',
     getPlamo: 'Tải PLaMo (570 MB)',
     downloadingPlamo: 'Đang tải PLaMo {p}%',
     loadingPlamo: 'Đang nạp PLaMo',
     plamoUnsupported: 'PLaMo không hỗ trợ {l}. Hãy chuyển bản dịch sang Chrome.',
+    getWhisper: 'Tải Whisper (560 MB)',
+    downloadingWhisper: 'Đang tải Whisper {p}%',
+    loadingWhisper: 'Đang nạp Whisper',
+    whisperNoGpu: 'Whisper cần WebGPU. Hãy chuyển nhận dạng giọng nói sang Chrome.',
     stage: 'Phụ đề',
     live: 'Đang dịch',
     pop: 'Cửa sổ nổi',
@@ -1393,7 +1391,6 @@ const I18N = {
     downloadingModel: 'Đang tải mô hình dịch {p}%',
     downloadingSpeech: 'Đang tải gói giọng nói',
     hint: 'Trong hộp thoại chia sẻ, hãy bật chia sẻ âm thanh',
-    cloudNote: 'Âm thanh được gửi đến Google',
     waiting: 'Đang chờ âm thanh',
     pipShowing: 'Phụ đề đang hiển thị trong cửa sổ nổi',
     unpop: 'Quay lại thẻ',
@@ -1405,7 +1402,7 @@ const I18N = {
     clear: 'Xóa',
     sameLang: 'Hãy chọn ngôn ngữ khác nhau cho lời nói và phụ đề',
     pairUnavailable: 'Không thể dịch cặp ngôn ngữ này',
-    localUnavailable: 'Nhận dạng trên thiết bị không hỗ trợ ngôn ngữ này. Hãy chuyển sang Đám mây.',
+    localUnavailable: 'Nhận dạng giọng nói của Chrome không hỗ trợ ngôn ngữ này. Hãy chuyển sang Whisper.',
     checkFailed: 'Không thể kiểm tra khả năng hỗ trợ ({e})',
     firstDownload: 'Cần tải xuống một lần',
     ready: 'Đã sẵn sàng',
@@ -1423,7 +1420,6 @@ const I18N = {
     serviceNotAllowed: 'Không dùng được nhận dạng giọng nói này. Hãy đổi cách nhận dạng.',
     langNotSupported: 'Nhận dạng giọng nói không hỗ trợ ngôn ngữ này',
     audioCapture: 'Không lấy được âm thanh từ màn hình đã chia sẻ',
-    network: 'Không kết nối được dịch vụ nhận dạng giọng nói. Hãy kiểm tra mạng hoặc chuyển sang Trên thiết bị.',
     untranslated: '(Không dịch được)',
     popFailed: 'Không mở được cửa sổ nổi ({e})',
     demo: ['Hãy cùng xem các tính năng mới', 'Đây là phần mà mọi người đã chờ đợi', 'Cảm ơn mọi người đã tham gia cuộc họp hôm nay'],
@@ -1437,13 +1433,15 @@ const I18N = {
     tgt: 'ภาษาคำบรรยาย',
     swap: 'สลับภาษา',
     engine: 'การจดจำเสียงพูด',
-    local: 'ในอุปกรณ์',
-    cloud: 'คลาวด์',
     translation: 'การแปล',
     getPlamo: 'ดาวน์โหลด PLaMo (570 MB)',
     downloadingPlamo: 'กำลังดาวน์โหลด PLaMo {p}%',
     loadingPlamo: 'กำลังโหลด PLaMo',
     plamoUnsupported: 'PLaMo ไม่รองรับ{l} โปรดเปลี่ยนการแปลเป็น Chrome',
+    getWhisper: 'ดาวน์โหลด Whisper (560 MB)',
+    downloadingWhisper: 'กำลังดาวน์โหลด Whisper {p}%',
+    loadingWhisper: 'กำลังโหลด Whisper',
+    whisperNoGpu: 'Whisper ต้องใช้ WebGPU โปรดเปลี่ยนการจดจำเสียงพูดเป็น Chrome',
     stage: 'คำบรรยาย',
     live: 'กำลังแปล',
     pop: 'หน้าต่างลอย',
@@ -1456,7 +1454,6 @@ const I18N = {
     downloadingModel: 'กำลังดาวน์โหลดโมเดลการแปล {p}%',
     downloadingSpeech: 'กำลังดาวน์โหลดชุดเสียงพูด',
     hint: 'ในหน้าต่างแชร์ ให้เปิดการแชร์เสียง',
-    cloudNote: 'เสียงจะถูกส่งไปยัง Google',
     waiting: 'กำลังรอเสียง',
     pipShowing: 'คำบรรยายแสดงอยู่ในหน้าต่างลอย',
     unpop: 'กลับไปที่แท็บ',
@@ -1468,7 +1465,7 @@ const I18N = {
     clear: 'ล้าง',
     sameLang: 'เลือกภาษาที่พูดและภาษาคำบรรยายให้ต่างกัน',
     pairUnavailable: 'แปลคู่ภาษานี้ไม่ได้',
-    localUnavailable: 'การจดจำในอุปกรณ์ไม่รองรับภาษานี้ โปรดเปลี่ยนเป็นคลาวด์',
+    localUnavailable: 'การจดจำเสียงพูดของ Chrome ไม่รองรับภาษานี้ โปรดเปลี่ยนเป็น Whisper',
     checkFailed: 'ตรวจสอบการรองรับไม่ได้ ({e})',
     firstDownload: 'ต้องดาวน์โหลดเพียงครั้งแรกครั้งเดียว',
     ready: 'พร้อมแล้ว',
@@ -1486,7 +1483,6 @@ const I18N = {
     serviceNotAllowed: 'ใช้การจดจำเสียงพูดนี้ไม่ได้ โปรดเปลี่ยนวิธีจดจำ',
     langNotSupported: 'การจดจำเสียงพูดไม่รองรับภาษานี้',
     audioCapture: 'รับเสียงจากหน้าจอที่แชร์ไม่ได้',
-    network: 'เชื่อมต่อบริการจดจำเสียงพูดไม่ได้ โปรดตรวจสอบเครือข่าย หรือเปลี่ยนเป็นในอุปกรณ์',
     untranslated: '(แปลไม่ได้)',
     popFailed: 'เปิดหน้าต่างลอยไม่ได้ ({e})',
     demo: ['มาดูฟีเจอร์ใหม่กันเลย', 'นี่คือช่วงที่ทุกคนรอคอย', 'ขอบคุณที่เข้าร่วมการประชุมวันนี้'],
@@ -1500,13 +1496,15 @@ const I18N = {
     tgt: 'لغة الترجمة النصية',
     swap: 'تبديل اللغتين',
     engine: 'التعرّف على الكلام',
-    local: 'على الجهاز',
-    cloud: 'السحابة',
     translation: 'الترجمة',
     getPlamo: 'تنزيل PLaMo (570 ميغابايت)',
     downloadingPlamo: 'جارٍ تنزيل PLaMo {p}%',
     loadingPlamo: 'جارٍ تحميل PLaMo',
     plamoUnsupported: 'لا يدعم PLaMo اللغة {l}. بدّل الترجمة إلى Chrome.',
+    getWhisper: 'تنزيل Whisper (560 ميغابايت)',
+    downloadingWhisper: 'جارٍ تنزيل Whisper {p}%',
+    loadingWhisper: 'جارٍ تحميل Whisper',
+    whisperNoGpu: 'يحتاج Whisper إلى WebGPU. بدّل التعرّف على الكلام إلى Chrome.',
     stage: 'الترجمة النصية',
     live: 'جارٍ الترجمة',
     pop: 'نافذة عائمة',
@@ -1519,7 +1517,6 @@ const I18N = {
     downloadingModel: 'جارٍ تنزيل نموذج الترجمة {p}%',
     downloadingSpeech: 'جارٍ تنزيل حزمة الكلام',
     hint: 'في نافذة المشاركة، فعّل مشاركة الصوت',
-    cloudNote: 'يُرسل الصوت إلى Google',
     waiting: 'في انتظار الصوت',
     pipShowing: 'تظهر الترجمة النصية في نافذة عائمة',
     unpop: 'العودة إلى علامة التبويب',
@@ -1531,7 +1528,7 @@ const I18N = {
     clear: 'مسح',
     sameLang: 'اختر لغتين مختلفتين للكلام والترجمة النصية',
     pairUnavailable: 'لا يمكن ترجمة هذا الزوج من اللغات',
-    localUnavailable: 'التعرّف على الجهاز لا يدعم هذه اللغة. انتقل إلى السحابة.',
+    localUnavailable: 'لا يدعم التعرّف على الكلام في Chrome هذه اللغة. انتقل إلى Whisper.',
     checkFailed: 'تعذّر التحقق من الدعم ({e})',
     firstDownload: 'يلزم تنزيل لمرة واحدة',
     ready: 'جاهز',
@@ -1549,7 +1546,6 @@ const I18N = {
     serviceNotAllowed: 'هذا التعرّف على الكلام غير متاح. غيّر طريقة التعرّف.',
     langNotSupported: 'التعرّف على الكلام لا يدعم هذه اللغة',
     audioCapture: 'تعذّر الحصول على الصوت من الشاشة المشتركة',
-    network: 'تعذّر الاتصال بخدمة التعرّف على الكلام. تحقّق من الشبكة أو انتقل إلى «على الجهاز».',
     untranslated: '(تعذّرت الترجمة)',
     popFailed: 'تعذّر فتح النافذة العائمة ({e})',
     demo: ['لنلقِ نظرة على الميزات الجديدة', 'هذا هو الجزء الذي ينتظره الجميع', 'شكرًا لانضمامكم إلى اجتماع اليوم'],
@@ -1563,13 +1559,15 @@ const I18N = {
     tgt: 'Altyazı dili',
     swap: 'Dilleri değiştir',
     engine: 'Konuşma tanıma',
-    local: 'Cihazda',
-    cloud: 'Bulut',
     translation: 'Çeviri',
     getPlamo: 'PLaMo’yu indir (570 MB)',
     downloadingPlamo: 'PLaMo indiriliyor %{p}',
     loadingPlamo: 'PLaMo yükleniyor',
     plamoUnsupported: 'PLaMo {l} dilini desteklemiyor. Çeviriyi Chrome’a geçirin.',
+    getWhisper: 'Whisper’ı indir (560 MB)',
+    downloadingWhisper: 'Whisper indiriliyor %{p}',
+    loadingWhisper: 'Whisper yükleniyor',
+    whisperNoGpu: 'Whisper için WebGPU gerekir. Konuşma tanımayı Chrome’a geçirin.',
     stage: 'Altyazı',
     live: 'Çevriliyor',
     pop: 'Küçük pencere',
@@ -1582,7 +1580,6 @@ const I18N = {
     downloadingModel: 'Çeviri modeli indiriliyor %{p}',
     downloadingSpeech: 'Konuşma paketi indiriliyor',
     hint: 'Paylaşım penceresinde ses paylaşımını açın',
-    cloudNote: 'Ses Google’a gönderilir',
     waiting: 'Ses bekleniyor',
     pipShowing: 'Altyazılar küçük pencerede gösteriliyor',
     unpop: 'Sekmeye dön',
@@ -1594,7 +1591,7 @@ const I18N = {
     clear: 'Temizle',
     sameLang: 'Konuşma ve altyazı için farklı diller seçin',
     pairUnavailable: 'Bu dil çifti çevrilemiyor',
-    localUnavailable: 'Cihazda tanıma bu dili desteklemiyor. Buluta geçin.',
+    localUnavailable: 'Chrome konuşma tanıma bu dili desteklemiyor. Whisper’a geçin.',
     checkFailed: 'Destek durumu kontrol edilemedi ({e})',
     firstDownload: 'Tek seferlik indirme gerekiyor',
     ready: 'Hazır',
@@ -1612,7 +1609,6 @@ const I18N = {
     serviceNotAllowed: 'Bu konuşma tanıma kullanılamıyor. Tanıma yöntemini değiştirin.',
     langNotSupported: 'Konuşma tanıma bu dili desteklemiyor',
     audioCapture: 'Paylaşılan ekrandan ses alınamadı',
-    network: 'Konuşma tanıma hizmetine bağlanılamıyor. Ağı kontrol edin veya Cihazda seçeneğine geçin.',
     untranslated: '(Çevrilemedi)',
     popFailed: 'Küçük pencere açılamadı ({e})',
     demo: ['Hadi yeni özelliklere bir göz atalım', 'İşte herkesin beklediği bölüm', 'Bugünkü toplantıya katıldığınız için teşekkürler'],
@@ -1626,13 +1622,15 @@ const I18N = {
     tgt: 'Ondertitelingstaal',
     swap: 'Talen omwisselen',
     engine: 'Spraakherkenning',
-    local: 'Op apparaat',
-    cloud: 'Cloud',
     translation: 'Vertaling',
     getPlamo: 'PLaMo downloaden (570 MB)',
     downloadingPlamo: 'PLaMo downloaden {p}%',
     loadingPlamo: 'PLaMo laden',
     plamoUnsupported: 'PLaMo ondersteunt {l} niet. Zet de vertaling op Chrome.',
+    getWhisper: 'Whisper downloaden (560 MB)',
+    downloadingWhisper: 'Whisper downloaden {p}%',
+    loadingWhisper: 'Whisper laden',
+    whisperNoGpu: 'Whisper heeft WebGPU nodig. Zet de spraakherkenning op Chrome.',
     stage: 'Ondertiteling',
     live: 'Bezig met vertalen',
     pop: 'Zwevend venster',
@@ -1645,7 +1643,6 @@ const I18N = {
     downloadingModel: 'Vertaalmodel downloaden {p}%',
     downloadingSpeech: 'Spraakpakket downloaden',
     hint: 'Zet in het deelvenster het delen van audio aan',
-    cloudNote: 'Audio wordt naar Google gestuurd',
     waiting: 'Wachten op audio',
     pipShowing: 'De ondertiteling staat in een zwevend venster',
     unpop: 'Terug naar tabblad',
@@ -1657,7 +1654,7 @@ const I18N = {
     clear: 'Wissen',
     sameLang: 'Kies verschillende talen voor spraak en ondertiteling',
     pairUnavailable: 'Deze taalcombinatie kan niet worden vertaald',
-    localUnavailable: 'Herkenning op het apparaat ondersteunt deze taal niet. Schakel over naar Cloud.',
+    localUnavailable: 'Spraakherkenning van Chrome ondersteunt deze taal niet. Schakel over naar Whisper.',
     checkFailed: 'Ondersteuning kon niet worden gecontroleerd ({e})',
     firstDownload: 'Eenmalige download nodig',
     ready: 'Klaar',
@@ -1675,7 +1672,6 @@ const I18N = {
     serviceNotAllowed: 'Deze spraakherkenning is niet beschikbaar. Kies een andere herkenningsmethode.',
     langNotSupported: 'Spraakherkenning ondersteunt deze taal niet',
     audioCapture: 'Kon geen audio ophalen van het gedeelde scherm',
-    network: 'Kan de spraakherkenningsdienst niet bereiken. Controleer het netwerk of schakel over naar Op apparaat.',
     untranslated: '(Kon niet vertalen)',
     popFailed: 'Zwevend venster kon niet worden geopend ({e})',
     demo: ['Laten we de nieuwe functies bekijken', 'Dit is het deel waar iedereen op heeft gewacht', 'Bedankt voor jullie deelname aan de vergadering van vandaag'],
@@ -1689,13 +1685,15 @@ const I18N = {
     tgt: 'Język napisów',
     swap: 'Zamień języki',
     engine: 'Rozpoznawanie mowy',
-    local: 'Na urządzeniu',
-    cloud: 'Chmura',
     translation: 'Tłumaczenie',
     getPlamo: 'Pobierz PLaMo (570 MB)',
     downloadingPlamo: 'Pobieranie PLaMo {p}%',
     loadingPlamo: 'Wczytywanie PLaMo',
     plamoUnsupported: 'PLaMo nie obsługuje języka: {l}. Przełącz tłumaczenie na Chrome.',
+    getWhisper: 'Pobierz Whisper (560 MB)',
+    downloadingWhisper: 'Pobieranie Whisper {p}%',
+    loadingWhisper: 'Wczytywanie Whisper',
+    whisperNoGpu: 'Whisper wymaga WebGPU. Przełącz rozpoznawanie mowy na Chrome.',
     stage: 'Napisy',
     live: 'Tłumaczenie',
     pop: 'Pływające okno',
@@ -1708,7 +1706,6 @@ const I18N = {
     downloadingModel: 'Pobieranie modelu tłumaczenia {p}%',
     downloadingSpeech: 'Pobieranie pakietu mowy',
     hint: 'W oknie udostępniania włącz udostępnianie dźwięku',
-    cloudNote: 'Dźwięk jest wysyłany do Google',
     waiting: 'Czekam na dźwięk',
     pipShowing: 'Napisy są w pływającym oknie',
     unpop: 'Wróć do karty',
@@ -1720,7 +1717,7 @@ const I18N = {
     clear: 'Wyczyść',
     sameLang: 'Wybierz różne języki mowy i napisów',
     pairUnavailable: 'Tej pary języków nie można przetłumaczyć',
-    localUnavailable: 'Rozpoznawanie na urządzeniu nie obsługuje tego języka. Przełącz na chmurę.',
+    localUnavailable: 'Rozpoznawanie mowy w Chrome nie obsługuje tego języka. Przełącz na Whisper.',
     checkFailed: 'Nie udało się sprawdzić obsługi ({e})',
     firstDownload: 'Potrzebne jest jednorazowe pobranie',
     ready: 'Gotowe',
@@ -1738,7 +1735,6 @@ const I18N = {
     serviceNotAllowed: 'To rozpoznawanie mowy jest niedostępne. Zmień tryb rozpoznawania.',
     langNotSupported: 'Rozpoznawanie mowy nie obsługuje tego języka',
     audioCapture: 'Nie udało się pobrać dźwięku z udostępnionego ekranu',
-    network: 'Brak połączenia z usługą rozpoznawania mowy. Sprawdź sieć lub przełącz na rozpoznawanie na urządzeniu.',
     untranslated: '(Nie udało się przetłumaczyć)',
     popFailed: 'Nie udało się otworzyć pływającego okna ({e})',
     demo: ['Przyjrzyjmy się nowym funkcjom', 'Oto część, na którą wszyscy czekali', 'Dziękuję za udział w dzisiejszym spotkaniu'],
@@ -1752,13 +1748,15 @@ const I18N = {
     tgt: 'Мова субтитрів',
     swap: 'Поміняти мови',
     engine: 'Розпізнавання мовлення',
-    local: 'На пристрої',
-    cloud: 'Хмара',
     translation: 'Переклад',
     getPlamo: 'Завантажити PLaMo (570 МБ)',
     downloadingPlamo: 'Завантаження PLaMo {p}%',
     loadingPlamo: 'Запуск PLaMo',
     plamoUnsupported: 'PLaMo не підтримує мову «{l}». Перемкніть переклад на Chrome.',
+    getWhisper: 'Завантажити Whisper (560 МБ)',
+    downloadingWhisper: 'Завантаження Whisper {p}%',
+    loadingWhisper: 'Запуск Whisper',
+    whisperNoGpu: 'Для Whisper потрібен WebGPU. Перемкніть розпізнавання мовлення на Chrome.',
     stage: 'Субтитри',
     live: 'Триває переклад',
     pop: 'Окреме вікно',
@@ -1771,7 +1769,6 @@ const I18N = {
     downloadingModel: 'Завантаження моделі перекладу {p}%',
     downloadingSpeech: 'Завантаження мовного пакета',
     hint: 'У вікні демонстрації ввімкніть передавання звуку',
-    cloudNote: 'Звук надсилається в Google',
     waiting: 'Очікування звуку',
     pipShowing: 'Субтитри показано в окремому вікні',
     unpop: 'Повернути у вкладку',
@@ -1783,7 +1780,7 @@ const I18N = {
     clear: 'Очистити',
     sameLang: 'Виберіть різні мови для мовлення і субтитрів',
     pairUnavailable: 'Цю пару мов неможливо перекласти',
-    localUnavailable: 'Розпізнавання на пристрої не підтримує цю мову. Перейдіть на хмару.',
+    localUnavailable: 'Розпізнавання мовлення Chrome не підтримує цю мову. Перейдіть на Whisper.',
     checkFailed: 'Не вдалося перевірити підтримку ({e})',
     firstDownload: 'Потрібне одноразове завантаження',
     ready: 'Готово',
@@ -1801,7 +1798,6 @@ const I18N = {
     serviceNotAllowed: 'Це розпізнавання мовлення недоступне. Змініть спосіб розпізнавання.',
     langNotSupported: 'Розпізнавання мовлення не підтримує цю мову',
     audioCapture: 'Не вдалося отримати звук з екрана, який демонструється',
-    network: 'Не вдається підключитися до служби розпізнавання мовлення. Перевірте мережу або перейдіть на розпізнавання на пристрої.',
     untranslated: '(Не вдалося перекласти)',
     popFailed: 'Не вдалося відкрити окреме вікно ({e})',
     demo: ['Погляньмо на нові функції', 'Ось частина, на яку всі чекали', 'Дякуємо, що долучилися до сьогоднішньої зустрічі'],
@@ -1817,7 +1813,6 @@ const FATAL_ERRORS = {
 const STORAGE_KEY = 'screen-translator.v2';
 const SHARE_URL = 'https://noxelwork.com/tolk';
 const RESTART_DELAY_MS = 250;
-const MAX_NETWORK_ERRORS = 5;
 const MAX_SOURCE_LINES = 2;
 const MAX_CAPTION_LINES = 2;
 const MAX_JOINED_TAIL = 10;
@@ -1832,6 +1827,9 @@ const PLAMO_LICENSE = 'https://plamo.preferredai.jp/info/plamo-community-license
 const PLAMO_CODES = { zh: 'zh-hans', 'zh-Hant': 'zh-hant' };
 const PLAMO_UNSUPPORTED = new Set(['pt', 'tr', 'uk']);
 const PLAMO_HISTORY = 2;
+const TRANSFORMERS = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2/+esm';
+const WHISPER_MODEL = 'onnx-community/whisper-large-v3-turbo';
+const WHISPER_CACHE_KEY = `https://huggingface.co/${WHISPER_MODEL}/resolve/main/onnx/encoder_model_q4f16.onnx`;
 const BREAK_AFTER = /^[、。，．,.!?！？;；:：]+$/;
 const NO_PIECE_START = /^[\s、。，．,.!?！？;；:：）」』]*/;
 
@@ -1859,14 +1857,16 @@ let busy = false;
 let blocked = false;
 let checking = false;
 let checked = false;
-let pendingStep = null; // 'translator' | 'plamo' | 'speech' | null
+let pendingStep = null; // 'translator' | 'plamo' | 'speech' | 'whisper' | null
 let progress = null; // null when not downloading, 0..1, or 'indeterminate'
 let wllama = null;
 let plamoReady = false;
 let plamoCached = false;
 const plamoHistory = [];
+let whisper = null; // { worker, ready } while the Whisper worker exists
+let whisperCached = false;
+let capture = null; // nodes feeding shared audio to the Whisper worker
 let checkId = 0;
-let networkErrors = 0;
 let session = 0;
 let startedAt = 0;
 let pipWindow = null;
@@ -1888,7 +1888,7 @@ let holdUntil = 0;
 
 const t = (key, vars = {}) => (I18N[ui][key] ?? I18N.en[key]).replace(/\{(\w+)\}/g, (_, name) => vars[name] ?? '');
 const htmlLang = (code) => (code === 'zh' ? 'zh-Hans' : code);
-const engine = () => engineInputs.find((input) => input.checked)?.value ?? 'cloud';
+const engine = () => engineInputs.find((input) => input.checked)?.value ?? 'chrome';
 const mt = () => mtInputs.find((input) => input.checked)?.value ?? 'chrome';
 const plamoCode = (code) => PLAMO_CODES[code] ?? code;
 const pair = () => ({ sourceLanguage: srcSel.value, targetLanguage: tgtSel.value });
@@ -1952,7 +1952,6 @@ function nameLanguages() {
 function render() {
   const view = running ? 'live' : busy ? (progress === null ? 'starting' : 'download') : checked ? 'idle' : 'checking';
   stage.dataset.view = view;
-  stage.dataset.engine = engine();
   stage.dataset.mt = mt();
   stage.toggleAttribute('data-step', Boolean(pendingStep));
   stage.toggleAttribute('data-blocked', blocked);
@@ -1968,10 +1967,11 @@ function render() {
     icon = 'none';
     const p = Math.floor(progress * 10) * 10;
     if (pendingStep === 'plamo') label = typeof progress === 'number' ? t('downloadingPlamo', { p }) : t('loadingPlamo');
+    else if (pendingStep === 'whisper') label = typeof progress === 'number' ? t('downloadingWhisper', { p }) : t('loadingWhisper');
     else label = typeof progress === 'number' ? t('downloadingModel', { p }) : t('downloadingSpeech');
   } else if (pendingStep) {
     icon = 'download';
-    label = t({ speech: 'getSpeech', plamo: 'getPlamo', translator: 'getModel' }[pendingStep]);
+    label = t({ speech: 'getSpeech', whisper: 'getWhisper', plamo: 'getPlamo', translator: 'getModel' }[pendingStep]);
   }
   actionBtn.dataset.icon = icon;
   actionLabel.textContent = label;
@@ -2001,15 +2001,17 @@ async function check() {
       const translation = mt() === 'plamo'
         ? plamoReady ? 'available' : (await isPlamoCached()) ? 'cached' : 'downloadable'
         : translator ? 'available' : await Translator.availability(pair());
-      const speech = engine() === 'local'
-        ? await SR.available({ langs: [locale()], processLocally: true })
-        : 'available';
+      const speech = engine() === 'whisper'
+        ? !(await hasWebGpu()) ? 'nogpu' : whisper?.ready ? 'available' : (await isWhisperCached()) ? 'cached' : 'downloadable'
+        : await SR.available({ langs: [locale()], processLocally: true });
       if (id !== checkId) return;
       plamoCached = translation === 'cached';
+      whisperCached = speech === 'cached';
       if (translation === 'unavailable') problem = 'pairUnavailable';
+      else if (speech === 'nogpu') problem = 'whisperNoGpu';
       else if (speech === 'unavailable') problem = 'localUnavailable';
       else if (translation !== 'available') step = mt() === 'plamo' ? 'plamo' : 'translator';
-      else if (speech !== 'available') step = 'speech';
+      else if (speech !== 'available') step = engine() === 'whisper' ? 'whisper' : 'speech';
     } catch (e) {
       if (id !== checkId) return;
       problem = 'checkFailed';
@@ -2026,12 +2028,13 @@ async function check() {
   else setStatus('ready', 'ready');
   render();
   // A model already saved in the browser loads without asking, since nothing is downloaded.
-  if (step === 'plamo' && plamoCached) prepare();
+  if ((step === 'plamo' && plamoCached) || (step === 'whisper' && whisperCached)) prepare();
 }
 
 async function prepare() {
   busy = true;
-  progress = pendingStep === 'speech' || (pendingStep === 'plamo' && plamoCached) ? 'indeterminate' : 0;
+  const cached = (pendingStep === 'plamo' && plamoCached) || (pendingStep === 'whisper' && whisperCached);
+  progress = pendingStep === 'speech' || cached ? 'indeterminate' : 0;
   render();
   try {
     if (pendingStep === 'plamo') {
@@ -2041,6 +2044,15 @@ async function prepare() {
         progress = ratio;
         const p = Math.floor(ratio * 10) * 10;
         if (status.vars.p !== p) setStatus('busy', 'downloadingPlamo', { p });
+        render();
+      });
+    } else if (pendingStep === 'whisper') {
+      setStatus('busy', whisperCached ? 'loadingWhisper' : 'downloadingWhisper', { p: 0 });
+      await loadWhisper((ratio) => {
+        if (whisperCached) return;
+        progress = ratio;
+        const p = Math.floor(ratio * 10) * 10;
+        if (status.vars.p !== p) setStatus('busy', 'downloadingWhisper', { p });
         render();
       });
     } else if (pendingStep === 'translator') {
@@ -2074,7 +2086,7 @@ async function prepare() {
 }
 
 async function start() {
-  audioCtx ??= new AudioContext();
+  audioCtx ??= new AudioContext({ sampleRate: 16000 });
   audioCtx.resume().catch(() => {});
   busy = true;
   setStatus('busy', 'pickScreen');
@@ -2114,6 +2126,7 @@ async function start() {
     } else {
       translator ??= await Translator.create(pair());
     }
+    if (engine() === 'whisper' && !whisper?.ready) await loadWhisper(() => {});
   } catch (e) {
     if (stream === current) stop('modelFailed', 'error', { e: e.message });
     return;
@@ -2124,12 +2137,12 @@ async function start() {
   running = true;
   plamoHistory.length = 0;
   session++;
-  networkErrors = 0;
   startedAt = Date.now();
   setStatus('live', 'live');
   startMeter(track);
   render();
-  listen(track);
+  if (engine() === 'whisper') listenWhisper(track).catch((e) => stop('srFailed', 'error', { e: e.message }));
+  else listen(track);
 }
 
 function stop(key = 'stopped', state = 'ready', vars = {}) {
@@ -2137,6 +2150,7 @@ function stop(key = 'stopped', state = 'ready', vars = {}) {
   busy = false;
   recognition?.abort();
   recognition = null;
+  stopCapture();
   stream?.getTracks().forEach((t) => t.stop());
   stream = null;
   stopMeter();
@@ -2152,7 +2166,7 @@ function listen(track) {
   rec.lang = locale();
   rec.continuous = true;
   rec.interimResults = true;
-  if (engine() === 'local') rec.processLocally = true;
+  rec.processLocally = true;
 
   const begin = () => {
     if (!running || recognition !== rec) return;
@@ -2165,7 +2179,6 @@ function listen(track) {
 
   rec.onresult = (e) => {
     if (recognition !== rec) return;
-    networkErrors = 0;
     let text = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const result = e.results[i];
@@ -2177,7 +2190,6 @@ function listen(track) {
   rec.onerror = (e) => {
     if (recognition !== rec) return;
     if (FATAL_ERRORS[e.error]) stop(FATAL_ERRORS[e.error], 'error');
-    else if (e.error === 'network' && ++networkErrors >= MAX_NETWORK_ERRORS) stop('network', 'error');
   };
   rec.onend = () => setTimeout(begin, RESTART_DELAY_MS);
 
@@ -2412,6 +2424,258 @@ async function translateWithPlamo(text) {
   return out;
 }
 
+// Runs inside a Worker built from its source text, so it must not use anything outside itself.
+// Silero VAD cuts the shared audio into utterances and Whisper transcribes each one, as in transformers.js's moonshine-web example.
+async function whisperWorkerMain(config) {
+  const RATE = 16000;
+  const FRAME = 512;
+  const PAD = 80 * 16;
+  const MIN_SILENCE = 400 * 16;
+  const MIN_SPEECH = 250 * 16;
+  const MAX_SAMPLES = 12 * RATE;
+  const MAX_PREV = Math.ceil(PAD / FRAME);
+  const EXPECTED_BYTES = 566e6;
+  const MAX_CHARS_PER_SECOND = 40;
+  const NOISE = /^(ご視聴ありがとうございました|ご清聴ありがとうございました|チャンネル登録(をお願いします|よろしくお願いします)?|thanks? (you )?(so much )?for watching|subtitles by .*)[.!。！]*$/i;
+
+  // Messages that arrive while the library loads are kept and handled once it is ready.
+  const early = [];
+  self.onmessage = (event) => early.push(event);
+  const { AutoModel, Tensor, pipeline } = await import(config.transformers);
+  const sr = new Tensor('int64', [RATE], []);
+  const buffer = new Float32Array(MAX_SAMPLES);
+  const queue = [];
+  let vad = null;
+  let asr = null;
+  let loading = null;
+  let chain = Promise.resolve();
+  let state = null;
+  let active = false;
+  let draining = false;
+  let session = 0;
+  let language = 'en';
+  let pointer = 0;
+  let recording = false;
+  let postSpeech = 0;
+  let prev = [];
+
+  // transformers.js runs one inference at a time, so every call goes through one chain.
+  const run = (task) => (chain = chain.then(task, task));
+
+  function reset(overflow) {
+    buffer.fill(0);
+    pointer = 0;
+    if (overflow?.length) {
+      buffer.set(overflow);
+      pointer = overflow.length;
+    }
+    recording = false;
+    postSpeech = 0;
+  }
+
+  function dispatch(overflow) {
+    const end = Math.min(pointer + PAD, buffer.length);
+    const lead = prev.reduce((n, b) => n + b.length, 0);
+    const audio = new Float32Array(lead + end);
+    let offset = 0;
+    for (const b of prev) {
+      audio.set(b, offset);
+      offset += b.length;
+    }
+    audio.set(buffer.subarray(0, end), offset);
+    prev = [];
+    reset(overflow);
+    const id = session;
+    run(() => asr(audio, { language, task: 'transcribe' })).then(({ text }) => {
+      const clean = text.trim();
+      if (!clean || NOISE.test(clean) || clean.length > (audio.length / RATE) * MAX_CHARS_PER_SECOND) return;
+      self.postMessage({ type: 'text', text: clean, session: id });
+    }).catch(() => {});
+  }
+
+  async function handle(chunk) {
+    const id = session;
+    const was = recording;
+    const input = new Tensor('float32', chunk, [1, chunk.length]);
+    const { stateN, output } = await run(() => vad({ input, sr, state }));
+    if (!active || id !== session) return;
+    state = stateN;
+    const p = output.data[0];
+    const speech = p > 0.3 || (was && p >= 0.1);
+    if (!was && !speech) {
+      prev.push(chunk);
+      if (prev.length > MAX_PREV) prev.shift();
+      return;
+    }
+    const room = buffer.length - pointer;
+    if (chunk.length >= room) {
+      buffer.set(chunk.subarray(0, room), pointer);
+      pointer += room;
+      dispatch(chunk.subarray(room));
+      return;
+    }
+    buffer.set(chunk, pointer);
+    pointer += chunk.length;
+    if (speech) {
+      recording = true;
+      postSpeech = 0;
+      return;
+    }
+    postSpeech += chunk.length;
+    if (postSpeech < MIN_SILENCE) return;
+    if (pointer < MIN_SPEECH) reset();
+    else dispatch();
+  }
+
+  async function drain() {
+    if (draining) return;
+    draining = true;
+    while (queue.length) {
+      try {
+        await handle(queue.shift());
+      } catch {}
+    }
+    draining = false;
+  }
+
+  async function load() {
+    const files = new Map();
+    const progress_callback = (p) => {
+      if (p.status !== 'progress') return;
+      files.set(p.file, p.loaded);
+      let loaded = 0;
+      for (const n of files.values()) loaded += n;
+      self.postMessage({ type: 'progress', ratio: Math.min(1, loaded / EXPECTED_BYTES) });
+    };
+    vad = await AutoModel.from_pretrained('onnx-community/silero-vad', { config: { model_type: 'custom' }, dtype: 'fp32', progress_callback });
+    asr = await pipeline('automatic-speech-recognition', config.model, {
+      device: 'webgpu',
+      dtype: { encoder_model: 'q4f16', decoder_model_merged: 'q4f16' },
+      progress_callback,
+    });
+    await asr(new Float32Array(RATE), { language: 'en', task: 'transcribe' });
+  }
+
+  self.onmessage = async ({ data }) => {
+    if (data.type === 'load') {
+      try {
+        await (loading ??= load());
+        self.postMessage({ type: 'ready' });
+      } catch (e) {
+        loading = null;
+        self.postMessage({ type: 'error', message: e?.message ?? String(e) });
+      }
+    } else if (data.type === 'start') {
+      session = data.session;
+      language = data.language;
+      state = new Tensor('float32', new Float32Array(2 * 128), [2, 1, 128]);
+      prev = [];
+      queue.length = 0;
+      reset();
+      active = true;
+    } else if (data.type === 'stop') {
+      active = false;
+      queue.length = 0;
+    } else if (data.type === 'audio' && active) {
+      queue.push(data.buffer);
+      drain();
+    }
+  };
+  for (const event of early) self.onmessage(event);
+}
+
+const CAPTURE_WORKLET = `registerProcessor('tolk-capture', class extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.frame = new Float32Array(512);
+    this.filled = 0;
+  }
+  process([input]) {
+    const samples = input[0];
+    for (let i = 0; samples && i < samples.length;) {
+      const take = Math.min(samples.length - i, 512 - this.filled);
+      this.frame.set(samples.subarray(i, i + take), this.filled);
+      this.filled += take;
+      i += take;
+      if (this.filled === 512) {
+        this.port.postMessage(this.frame, [this.frame.buffer]);
+        this.frame = new Float32Array(512);
+        this.filled = 0;
+      }
+    }
+    return true;
+  }
+});`;
+let captureModule = null;
+let gpuSupport = null;
+
+const hasWebGpu = () => (gpuSupport ??= navigator.gpu
+  ? navigator.gpu.requestAdapter().then(Boolean, () => false)
+  : Promise.resolve(false));
+
+async function isWhisperCached() {
+  try {
+    return Boolean(await (await caches.open('transformers-cache')).match(WHISPER_CACHE_KEY));
+  } catch {
+    return false;
+  }
+}
+
+function onWhisperMessage({ data }) {
+  const pending = whisper?.pending;
+  if (data.type === 'progress') pending?.onProgress(data.ratio);
+  else if (data.type === 'ready') {
+    whisper.ready = true;
+    whisper.pending = null;
+    pending?.resolve();
+  } else if (data.type === 'error') {
+    whisper.pending = null;
+    pending?.reject(new Error(data.message));
+  } else if (data.type === 'text' && running && data.session === session) {
+    commit(data.text);
+  }
+}
+
+function loadWhisper(onProgress) {
+  if (!whisper) {
+    const source = `(${whisperWorkerMain})(${JSON.stringify({ transformers: TRANSFORMERS, model: WHISPER_MODEL })});`;
+    const worker = new Worker(URL.createObjectURL(new Blob([source], { type: 'text/javascript' })), { type: 'module' });
+    worker.onmessage = onWhisperMessage;
+    whisper = { worker, ready: false, pending: null };
+  }
+  const instance = whisper;
+  return new Promise((resolve, reject) => {
+    instance.pending = { resolve, reject, onProgress };
+    instance.worker.postMessage({ type: 'load' });
+  });
+}
+
+function unloadWhisper() {
+  whisper?.worker.terminate();
+  whisper = null;
+}
+
+async function listenWhisper(track) {
+  captureModule ??= audioCtx.audioWorklet.addModule(URL.createObjectURL(new Blob([CAPTURE_WORKLET], { type: 'text/javascript' })));
+  await captureModule;
+  if (!running) return;
+  const source = audioCtx.createMediaStreamSource(new MediaStream([track]));
+  const node = new AudioWorkletNode(audioCtx, 'tolk-capture', { numberOfOutputs: 0 });
+  const { worker } = whisper;
+  node.port.onmessage = ({ data }) => worker.postMessage({ type: 'audio', buffer: data }, [data.buffer]);
+  worker.postMessage({ type: 'start', session, language: srcSel.value === 'zh-Hant' ? 'zh' : srcSel.value });
+  source.connect(node);
+  capture = { source, node };
+}
+
+function stopCapture() {
+  if (!capture) return;
+  capture.source.disconnect();
+  capture.node.port.onmessage = null;
+  capture = null;
+  whisper?.worker.postMessage({ type: 'stop' });
+}
+
 function languageChanged() {
   translator?.destroy();
   translator = null;
@@ -2448,9 +2712,9 @@ function initControls(prefs) {
   capSrc.lang = srcSel.value;
   capTr.lang = tgtSel.value;
 
-  const local = engineInputs.find((input) => input.value === 'local');
-  local.disabled = !SR.available;
-  const chosen = local.disabled || prefs.engine === 'cloud' ? 'cloud' : 'local';
+  const chrome = engineInputs.find((input) => input.value === 'chrome');
+  chrome.disabled = !SR.available;
+  const chosen = chrome.disabled || prefs.engine === 'whisper' ? 'whisper' : 'chrome';
   engineInputs.find((input) => input.value === chosen).checked = true;
   mtInputs.find((input) => input.value === (prefs.mt === 'plamo' ? 'plamo' : 'chrome')).checked = true;
 }
@@ -2552,6 +2816,7 @@ if (supported) {
   for (const input of engineInputs) {
     input.addEventListener('change', () => {
       savePrefs({ engine: engine() });
+      if (engine() !== 'whisper') unloadWhisper();
       check();
     });
   }
