@@ -139,15 +139,16 @@ h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
   overflow: hidden;
 }
 #capTr {
-  height: 5.6em;
+  height: 2.8em;
+  justify-content: center;
   font-size: clamp(1.375rem, 3.2vw, 2.25rem);
   font-weight: 700;
   line-height: 1.4;
   color: var(--subtitle);
   text-shadow: 0 2px 0 rgb(0 0 0 / .55);
 }
-#capTr p { text-wrap: balance; transition: opacity .2s; }
-#capTr p:not(:last-child) { opacity: .6; }
+#capTr p { text-wrap: balance; animation: appear .2s ease-out; }
+@keyframes appear { from { opacity: 0; } }
 #capSrc { height: 3.2em; font-size: 1rem; }
 #hint { margin: auto; max-width: 30rem; }
 #hint:not([hidden]) ~ .caption { display: none; }
@@ -167,7 +168,6 @@ h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
 
 .pip { background: var(--screen); }
 .pip .stage { height: 100vh; min-height: 0; padding: 1.25rem; border-radius: 0; }
-.pip #capTr { flex: 1; height: auto; min-height: 0; mask-image: linear-gradient(transparent, #000 1.4em); }
 .pip #pop { display: none; }
 
 .links { display: flex; justify-content: flex-end; gap: .5rem; margin-top: -.5rem; }
@@ -204,7 +204,7 @@ h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
 }
 @media (prefers-reduced-motion: reduce) {
   #status::before { animation: none !important; }
-  #capTr p { transition: none; }
+  #capTr p { animation: none; }
 }
 </style>
 </head>
@@ -269,7 +269,12 @@ const FATAL_ERRORS = {
 const STORAGE_KEY = 'screen-translator.v2';
 const RESTART_DELAY_MS = 250;
 const MAX_NETWORK_ERRORS = 5;
-const MAX_CAPTION_LINES = 4;
+const MAX_SOURCE_LINES = 2;
+const MAX_CAPTION_LINES = 2;
+const MIN_HOLD_MS = 1500;
+const MAX_HOLD_MS = 5000;
+const HOLD_PER_WORD_MS = 280;
+const BREAK_AFTER = /^[、。，．,.!?！？;；:：]+$/;
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const $ = (id) => document.getElementById(id);
@@ -291,6 +296,9 @@ let networkErrors = 0;
 const finals = [];
 let translating = false;
 let liveSrc = null;
+const captions = [];
+let captionTimer = null;
+let holdUntil = 0;
 
 const pair = () => ({ sourceLanguage: srcSel.value, targetLanguage: tgtSel.value });
 const locale = () => LOCALES.get(srcSel.value);
@@ -464,18 +472,65 @@ function listen(track) {
   begin();
 }
 
-function addLine(box, text) {
-  const line = document.createElement('p');
-  line.dir = 'auto';
-  line.textContent = text;
-  box.append(line);
-  while (box.childElementCount > MAX_CAPTION_LINES) box.firstElementChild.remove();
-  return line;
+function showSource(text) {
+  if (!liveSrc) {
+    liveSrc = document.createElement('p');
+    liveSrc.dir = 'auto';
+    capSrc.append(liveSrc);
+    while (capSrc.childElementCount > MAX_SOURCE_LINES) capSrc.firstElementChild.remove();
+  }
+  liveSrc.textContent = text;
 }
 
-function showSource(text) {
-  if (liveSrc) liveSrc.textContent = text;
-  else liveSrc = addLine(capSrc, text);
+const wordsOf = (text) => new Intl.Segmenter(tgtSel.value, { granularity: 'word' }).segment(text);
+
+function splitCaption(text) {
+  const probe = document.createElement('p');
+  probe.style.cssText = `position: absolute; visibility: hidden; width: ${capTr.clientWidth}px`;
+  capTr.append(probe);
+  probe.textContent = 'あ';
+  const limit = probe.offsetHeight * (MAX_CAPTION_LINES + .5);
+  const fits = (s) => {
+    probe.textContent = s;
+    return probe.offsetHeight <= limit;
+  };
+  let end = text.length;
+  if (!fits(text)) {
+    let natural = 0;
+    end = 0;
+    for (const { segment, index } of wordsOf(text)) {
+      if (end && !fits(text.slice(0, index + segment.length))) break;
+      end = index + segment.length;
+      if (BREAK_AFTER.test(segment)) natural = end;
+    }
+    if (natural * 2 >= end) end = natural;
+  }
+  probe.remove();
+  return [text.slice(0, end).trim(), text.slice(end).trim()];
+}
+
+function queueCaption(text) {
+  captions.push(text);
+  scheduleCaption();
+}
+
+function scheduleCaption() {
+  if (captionTimer || !captions.length) return;
+  captionTimer = setTimeout(showCaption, Math.max(0, holdUntil - Date.now()));
+}
+
+function showCaption() {
+  captionTimer = null;
+  const [chunk, rest] = splitCaption(captions.shift());
+  if (rest) captions.unshift(rest);
+  const line = document.createElement('p');
+  line.dir = 'auto';
+  line.textContent = chunk;
+  capTr.replaceChildren(line);
+  const words = [...wordsOf(chunk)].filter((s) => s.isWordLike).length;
+  const hold = captions.length > 2 ? MIN_HOLD_MS : Math.min(MAX_HOLD_MS, Math.max(MIN_HOLD_MS, words * HOLD_PER_WORD_MS));
+  holdUntil = Date.now() + hold;
+  scheduleCaption();
 }
 
 function commit(text) {
@@ -500,7 +555,7 @@ function commit(text) {
     text,
     done(out) {
       translated.textContent = out ?? '(翻訳できませんでした)';
-      if (out !== null) addLine(capTr, out);
+      if (out !== null) queueCaption(out);
     },
   });
   pump();
@@ -564,7 +619,7 @@ function initControls() {
 
 async function popOut() {
   try {
-    const pip = await documentPictureInPicture.requestWindow({ width: 640, height: 260 });
+    const pip = await documentPictureInPicture.requestWindow({ width: 640, height: 240 });
     pip.document.documentElement.lang = 'ja';
     pip.document.head.append(
       ...[...document.querySelectorAll('style, link[rel="stylesheet"]')].map((node) => node.cloneNode(true)),
