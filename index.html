@@ -137,20 +137,20 @@ h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
   flex-direction: column;
   justify-content: flex-end;
   overflow: hidden;
-  text-wrap: balance;
 }
 #capTr {
-  max-height: 4.2em;
+  height: 5.6em;
   font-size: clamp(1.375rem, 3.2vw, 2.25rem);
   font-weight: 700;
   line-height: 1.4;
   color: var(--subtitle);
   text-shadow: 0 2px 0 rgb(0 0 0 / .55);
-  transition: opacity .2s;
 }
-#capTr.stale { opacity: .55; }
-#capSrc { max-height: 3.2em; font-size: 1rem; }
+#capTr p { text-wrap: balance; transition: opacity .2s; }
+#capTr p:not(:last-child) { opacity: .6; }
+#capSrc { height: 3.2em; font-size: 1rem; }
 #hint { margin: auto; max-width: 30rem; }
+#hint:not([hidden]) ~ .caption { display: none; }
 #pop {
   position: absolute;
   top: .75rem;
@@ -166,7 +166,8 @@ h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
 #pop:focus-visible { outline-color: var(--subtitle); }
 
 .pip { background: var(--screen); }
-.pip .stage { min-height: 100vh; padding: 1.25rem; border-radius: 0; }
+.pip .stage { height: 100vh; min-height: 0; padding: 1.25rem; border-radius: 0; }
+.pip #capTr { flex: 1; height: auto; min-height: 0; mask-image: linear-gradient(transparent, #000 1.4em); }
 .pip #pop { display: none; }
 
 .links { display: flex; justify-content: flex-end; gap: .5rem; margin-top: -.5rem; }
@@ -203,7 +204,7 @@ h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
 }
 @media (prefers-reduced-motion: reduce) {
   #status::before { animation: none !important; }
-  #capTr { transition: none; }
+  #capTr p { transition: none; }
 }
 </style>
 </head>
@@ -233,8 +234,8 @@ h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
     <section id="stage" class="stage" aria-label="字幕">
       <button id="pop" type="button" hidden>字幕を小窓に出す</button>
       <p id="hint">共有ダイアログで「音声も共有する」をオンにしてください。</p>
-      <p id="capTr" class="caption" dir="auto"></p>
-      <p id="capSrc" class="caption" dir="auto"></p>
+      <div id="capTr" class="caption"></div>
+      <div id="capSrc" class="caption"></div>
     </section>
   </div>
 
@@ -268,6 +269,7 @@ const FATAL_ERRORS = {
 const STORAGE_KEY = 'screen-translator.v2';
 const RESTART_DELAY_MS = 250;
 const MAX_NETWORK_ERRORS = 5;
+const MAX_CAPTION_LINES = 4;
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const $ = (id) => document.getElementById(id);
@@ -287,10 +289,8 @@ let checkId = 0;
 let networkErrors = 0;
 
 const finals = [];
-let interim = null;
 let translating = false;
-let finalCount = 0;
-let captionSeq = 0;
+let liveSrc = null;
 
 const pair = () => ({ sourceLanguage: srcSel.value, targetLanguage: tgtSel.value });
 const locale = () => LOCALES.get(srcSel.value);
@@ -450,7 +450,7 @@ function listen(track) {
       if (result.isFinal) commit(result[0].transcript.trim());
       else text += result[0].transcript;
     }
-    showInterim(text.trim());
+    if (text.trim()) showSource(text.trim());
   };
   rec.onerror = (e) => {
     if (recognition !== rec) return;
@@ -464,22 +464,24 @@ function listen(track) {
   begin();
 }
 
-function setSource(text) {
-  capSrc.textContent = text;
-  capTr.classList.add('stale');
-  return ++captionSeq;
+function addLine(box, text) {
+  const line = document.createElement('p');
+  line.dir = 'auto';
+  line.textContent = text;
+  box.append(line);
+  while (box.childElementCount > MAX_CAPTION_LINES) box.firstElementChild.remove();
+  return line;
 }
 
-function showCaption(text, seq) {
-  capTr.textContent = text;
-  capTr.classList.toggle('stale', seq !== captionSeq);
+function showSource(text) {
+  if (liveSrc) liveSrc.textContent = text;
+  else liveSrc = addLine(capSrc, text);
 }
 
 function commit(text) {
   if (!text) return;
-  const id = ++finalCount;
-  const seq = setSource(text);
-  interim = null;
+  showSource(text);
+  liveSrc = null;
 
   const item = document.createElement('li');
   const source = document.createElement('p');
@@ -498,31 +500,17 @@ function commit(text) {
     text,
     done(out) {
       translated.textContent = out ?? '(翻訳できませんでした)';
-      if (out !== null && id === finalCount) showCaption(out, seq);
+      if (out !== null) addLine(capTr, out);
     },
   });
-  pump();
-}
-
-function showInterim(text) {
-  if (!text) return;
-  const generation = finalCount;
-  const seq = setSource(text);
-  interim = {
-    text,
-    done(out) {
-      if (out !== null && generation === finalCount) showCaption(out, seq);
-    },
-  };
   pump();
 }
 
 async function pump() {
   if (translating) return;
   translating = true;
-  while (finals.length || interim) {
-    const job = finals.shift() ?? interim;
-    if (job === interim) interim = null;
+  while (finals.length) {
+    const job = finals.shift();
     let out = null;
     try {
       out = await translator.translate(job.text);
@@ -576,7 +564,7 @@ function initControls() {
 
 async function popOut() {
   try {
-    const pip = await documentPictureInPicture.requestWindow({ width: 640, height: 200 });
+    const pip = await documentPictureInPicture.requestWindow({ width: 640, height: 260 });
     pip.document.documentElement.lang = 'ja';
     pip.document.head.append(
       ...[...document.querySelectorAll('style, link[rel="stylesheet"]')].map((node) => node.cloneNode(true)),
