@@ -139,7 +139,7 @@ h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
   overflow: hidden;
 }
 #capTr {
-  height: 2.8em;
+  min-height: 2.8em;
   justify-content: center;
   font-size: clamp(1.375rem, 3.2vw, 2.25rem);
   font-weight: 700;
@@ -271,11 +271,13 @@ const RESTART_DELAY_MS = 250;
 const MAX_NETWORK_ERRORS = 5;
 const MAX_SOURCE_LINES = 2;
 const MAX_CAPTION_LINES = 2;
+const MAX_JOINED_TAIL = 10;
 const MIN_HOLD_MS = 1500;
 const MAX_HOLD_MS = 8000;
 const HOLD_PER_WORD_MS = 280;
 const MAX_LAG_MS = 8000;
 const BREAK_AFTER = /^[、。，．,.!?！？;；:：]+$/;
+const NO_PIECE_START = /^[\s、。，．,.!?！？;；:：）」』]*/;
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const $ = (id) => document.getElementById(id);
@@ -508,7 +510,10 @@ function splitCaption(text) {
     if (natural * 2 >= end) end = natural;
   }
   probe.remove();
-  return [text.slice(0, end).trim(), text.slice(end).trim()];
+  end += text.slice(end).match(NO_PIECE_START)[0].length;
+  const rest = text.slice(end).trim();
+  if (rest.length <= MAX_JOINED_TAIL) return [text.trim(), ''];
+  return [text.slice(0, end).trim(), rest];
 }
 
 function queueCaption(text) {
