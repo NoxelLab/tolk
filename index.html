@@ -4,9 +4,29 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>画面の音声を同時翻訳</title>
+<meta name="description" content="共有した画面やタブの音声を聞き取り、字幕にして訳します。">
+<meta name="theme-color" content="#E9EDF2">
+<link rel="canonical" href="https://noxelwork.com/scrn-translator">
+<link rel="icon" href="/scrn-translator/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:url" content="https://noxelwork.com/scrn-translator">
+<meta property="og:title" content="画面の音声を同時翻訳">
+<meta property="og:description" content="共有した画面やタブの音声を聞き取り、字幕にして訳します。">
+<meta property="og:image" content="https://noxelwork.com/scrn-translator/ogp.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="紺色の画面に黄色で表示された日本語の字幕と英語の原文">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@NoxelLab">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<script>
+if (!(window.SpeechRecognition || window.webkitSpeechRecognition) || !('Translator' in self) || !navigator.mediaDevices?.getDisplayMedia) {
+  document.documentElement.classList.add('unsupported');
+}
+</script>
 <style>
 :root {
   --paper: #E9EDF2;
@@ -46,7 +66,6 @@ header {
   gap: .25rem 1.5rem;
 }
 h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
-.lead { flex-basis: 100%; color: var(--muted); }
 
 #status { display: flex; align-items: center; gap: .5rem; font-size: .9375rem; }
 #status::before {
@@ -63,12 +82,15 @@ h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
 #status[data-state="error"]::before { background: var(--error); }
 @keyframes pulse { 50% { opacity: .25; } }
 
+.notice, #hint, .caption { word-break: auto-phrase; }
 .notice {
   padding: .75rem 1rem;
   border: 2px solid var(--error);
   border-radius: .5rem;
   color: var(--error);
 }
+:root:not(.unsupported) .notice,
+.unsupported :is(#status, #controls, #stageHome, .log) { display: none; }
 
 #controls {
   display: flex;
@@ -147,6 +169,22 @@ h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
 .pip .stage { min-height: 100vh; padding: 1rem 1.25rem 1.25rem; border-radius: 0; }
 .pip #pop { display: none; }
 
+.links { display: flex; justify-content: flex-end; gap: .5rem; margin-top: -.5rem; }
+.links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.5rem;
+  padding: 0 1rem;
+  border: 1.5px solid var(--ink);
+  border-radius: .5rem;
+  background: var(--field);
+  font-size: .9375rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+.unsupported .links { margin-top: 0; }
+
 .log { border-top: 2px solid var(--ink); }
 .log:has(#log:empty) { display: none; }
 .log-head, #log li { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem 1.5rem; }
@@ -159,6 +197,7 @@ h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
 
 @media (max-width: 40rem) {
   #action { margin-left: 0; flex: 1 1 100%; }
+  .links a { flex: 1; }
   .log-head, #log li { grid-template-columns: 1fr; }
   .log-head span { display: none; }
 }
@@ -173,10 +212,9 @@ h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
   <header>
     <h1>画面の音声を同時翻訳</h1>
     <p id="status" role="status" data-state="idle"></p>
-    <p class="lead">共有した画面やタブの音声を聞き取り、字幕にして訳します。</p>
   </header>
 
-  <p id="unsupported" class="notice" hidden>このブラウザでは動きません。デスクトップ版 Chrome の最新版で、http://localhost または https のページとして開いてください。</p>
+  <p class="notice">パソコン版 Chrome の最新版で開いてください。</p>
 
   <fieldset id="controls">
     <label>話されている言語<select id="src"></select></label>
@@ -194,10 +232,15 @@ h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
   <div id="stageHome">
     <section id="stage" class="stage" aria-label="字幕">
       <button id="pop" type="button" hidden>字幕を小窓に出す</button>
-      <p id="hint">画面を選ぶと、ここに字幕が出ます。共有ダイアログでは「音声も共有する」をオンにしてください。</p>
+      <p id="hint">共有ダイアログで「音声も共有する」をオンにしてください。</p>
       <p id="capTr" class="caption" dir="auto"></p>
       <p id="capSrc" class="caption" dir="auto"></p>
     </section>
+  </div>
+
+  <div class="links">
+    <a href="https://x.com/intent/tweet?text=%E7%94%BB%E9%9D%A2%E3%81%AE%E9%9F%B3%E5%A3%B0%E3%82%92%E5%90%8C%E6%99%82%E7%BF%BB%E8%A8%B3&amp;url=https%3A%2F%2Fnoxelwork.com%2Fscrn-translator" target="_blank" rel="noopener noreferrer">X で共有</a>
+    <a href="https://x.com/NoxelLab" target="_blank" rel="noopener noreferrer">作者X</a>
   </div>
 
   <section class="log" aria-label="翻訳の履歴">
@@ -218,7 +261,7 @@ const LOCALES = new Map([
 ]);
 const FATAL_ERRORS = {
   'not-allowed': '音声認識が許可されていません。',
-  'service-not-allowed': 'この音声認識は使えません。音声認識の方式を切り替えてください。',
+  'service-not-allowed': 'この音声認識は利用できません。音声認識の方式を切り替えてください。',
   'language-not-supported': 'この言語の音声認識には対応していません。',
   'audio-capture': '共有した画面から音声を取得できませんでした。',
 };
@@ -247,7 +290,7 @@ const finals = [];
 let interim = null;
 let translating = false;
 let finalCount = 0;
-let interimActive = false;
+let captionSeq = 0;
 
 const pair = () => ({ sourceLanguage: srcSel.value, targetLanguage: tgtSel.value });
 const locale = () => LOCALES.get(srcSel.value);
@@ -308,7 +351,8 @@ async function prepare() {
         ...pair(),
         monitor(m) {
           m.addEventListener('downloadprogress', (e) => {
-            setStatus('busy', `翻訳モデルをダウンロード中 ${Math.round(e.loaded * 100)}%`);
+            const text = `翻訳モデルをダウンロード中 ${Math.floor(e.loaded * 10) * 10}%`;
+            if (statusEl.textContent !== text) setStatus('busy', text);
           });
         },
       });
@@ -343,6 +387,7 @@ async function start() {
     return;
   }
 
+  const current = stream;
   const [track] = stream.getAudioTracks();
   if (!track) {
     stop('音声が共有されていません。共有ダイアログで「音声も共有する」をオンにして選び直してください。', 'error');
@@ -354,10 +399,10 @@ async function start() {
   try {
     translator ??= await Translator.create(pair());
   } catch (e) {
-    stop(`翻訳モデルを読み込めませんでした(${e.message})`, 'error');
+    if (stream === current) stop(`翻訳モデルを読み込めませんでした(${e.message})`, 'error');
     return;
   }
-  if (!stream) return;
+  if (stream !== current) return;
 
   busy = false;
   running = true;
@@ -371,7 +416,7 @@ async function start() {
 function stop(text = '翻訳を止めました。', state = 'idle') {
   running = false;
   busy = false;
-  recognition?.stop();
+  recognition?.abort();
   recognition = null;
   stream?.getTracks().forEach((t) => t.stop());
   stream = null;
@@ -397,6 +442,7 @@ function listen(track) {
   };
 
   rec.onresult = (e) => {
+    if (recognition !== rec) return;
     networkErrors = 0;
     let text = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -407,6 +453,7 @@ function listen(track) {
     showInterim(text.trim());
   };
   rec.onerror = (e) => {
+    if (recognition !== rec) return;
     if (FATAL_ERRORS[e.error]) stop(FATAL_ERRORS[e.error], 'error');
     else if (e.error === 'network' && ++networkErrors >= MAX_NETWORK_ERRORS) {
       stop('音声認識サービスに接続できません。ネットワークを確認するか、端末内の音声認識に切り替えてください。', 'error');
@@ -417,16 +464,29 @@ function listen(track) {
   begin();
 }
 
+function setSource(text) {
+  capSrc.textContent = text;
+  capTr.classList.add('stale');
+  return ++captionSeq;
+}
+
+function showCaption(text, seq) {
+  capTr.textContent = text;
+  capTr.classList.toggle('stale', seq !== captionSeq);
+}
+
 function commit(text) {
   if (!text) return;
   const id = ++finalCount;
-  interimActive = false;
+  const seq = setSource(text);
   interim = null;
 
   const item = document.createElement('li');
   const source = document.createElement('p');
   const translated = document.createElement('p');
   source.dir = translated.dir = 'auto';
+  source.lang = srcSel.value;
+  translated.lang = tgtSel.value;
   source.textContent = text;
   translated.textContent = '…';
   item.append(source, translated);
@@ -434,13 +494,11 @@ function commit(text) {
   logEl.append(item);
   if (pinned) logEl.scrollTop = logEl.scrollHeight;
 
-  capSrc.textContent = text;
-  capTr.classList.add('stale');
   finals.push({
     text,
     done(out) {
-      translated.textContent = out;
-      if (id === finalCount && !interimActive) showCaption(out);
+      translated.textContent = out ?? '(翻訳できませんでした)';
+      if (out !== null && id === finalCount) showCaption(out, seq);
     },
   });
   pump();
@@ -449,21 +507,14 @@ function commit(text) {
 function showInterim(text) {
   if (!text) return;
   const generation = finalCount;
-  interimActive = true;
-  capSrc.textContent = text;
-  capTr.classList.add('stale');
+  const seq = setSource(text);
   interim = {
     text,
     done(out) {
-      if (interimActive && generation === finalCount) showCaption(out);
+      if (out !== null && generation === finalCount) showCaption(out, seq);
     },
   };
   pump();
-}
-
-function showCaption(text) {
-  capTr.textContent = text;
-  capTr.classList.remove('stale');
 }
 
 async function pump() {
@@ -472,11 +523,11 @@ async function pump() {
   while (finals.length || interim) {
     const job = finals.shift() ?? interim;
     if (job === interim) interim = null;
+    let out = null;
     try {
-      job.done(await translator.translate(job.text));
-    } catch {
-      job.done('(翻訳できませんでした)');
-    }
+      out = await translator.translate(job.text);
+    } catch {}
+    job.done(out);
   }
   translating = false;
 }
@@ -484,6 +535,7 @@ async function pump() {
 function languageChanged() {
   translator?.destroy();
   translator = null;
+  capSrc.lang = srcSel.value;
   capTr.lang = tgtSel.value;
   savePrefs();
   check();
@@ -509,10 +561,12 @@ function initControls() {
     for (const code of LOCALES.keys()) sel.add(new Option(names.of(code), code));
   }
   const prefs = loadPrefs();
-  const own = navigator.language.split('-')[0];
-  const defaultTgt = LOCALES.has(own) ? own : 'en';
+  const own = new Intl.Locale(navigator.language).maximize();
+  const ownCode = own.script === 'Hant' ? 'zh-Hant' : own.language;
+  const defaultTgt = LOCALES.has(ownCode) ? ownCode : 'en';
   tgtSel.value = LOCALES.has(prefs.tgt) ? prefs.tgt : defaultTgt;
   srcSel.value = LOCALES.has(prefs.src) ? prefs.src : tgtSel.value === 'en' ? 'ja' : 'en';
+  capSrc.lang = srcSel.value;
   capTr.lang = tgtSel.value;
 
   const localOption = engineSel.querySelector('[value="local"]');
@@ -535,10 +589,7 @@ async function popOut() {
   }
 }
 
-if (!SR || !('Translator' in self) || !navigator.mediaDevices?.getDisplayMedia) {
-  $('unsupported').hidden = false;
-  $('controls').disabled = true;
-} else {
+if (!document.documentElement.classList.contains('unsupported')) {
   initControls();
   actionBtn.addEventListener('click', () => (running ? stop() : pendingStep ? prepare() : start()));
   srcSel.addEventListener('change', languageChanged);
