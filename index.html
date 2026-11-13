@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tolk｜画面の音声を同時翻訳</title>
 <meta name="description" content="共有した画面やタブの音声を聞き取り、字幕にして訳します。">
-<meta name="theme-color" content="#141415">
+<meta name="theme-color" content="#0e0e10">
 <link rel="canonical" href="https://noxelwork.com/tolk">
 <link rel="icon" href="/tolk/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
@@ -30,17 +30,21 @@ if (!(window.SpeechRecognition || window.webkitSpeechRecognition) || !('Translat
 <style>
 :root {
   color-scheme: dark;
-  --page: #141415;
-  --screen: #0b0b0c;
-  --raised: #232325;
-  --raised-hover: #2c2c2f;
-  --line: rgb(237 237 237 / .08);
-  --line-strong: rgb(237 237 237 / .14);
-  --text: #ededed;
-  --text-2: #a1a1a6;
-  --muted: #85858b;
-  --subtitle: #ffd84a;
-  --live: #e5484d;
+  --page: #0e0e10;
+  --panel: #161618;
+  --field: #1f1f23;
+  --field-hover: #29292e;
+  --screen: #060607;
+  --line: rgb(255 255 255 / .07);
+  --line-strong: rgb(255 255 255 / .13);
+  --text: #f4f4f5;
+  --text-2: #b4b4bc;
+  --muted: #8b8b94;
+  --brand: #ffd84a;
+  --brand-hover: #ffe27d;
+  --on-brand: #1c1600;
+  --live: #ff4d4f;
+  --danger: #ff8a8c;
   --ease: cubic-bezier(.22, 1, .36, 1);
   font-family: "IBM Plex Sans JP", system-ui, sans-serif;
   line-height: 1.6;
@@ -49,181 +53,301 @@ if (!(window.SpeechRecognition || window.webkitSpeechRecognition) || !('Translat
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body { margin: 0; background: var(--page); }
-p, h1 { margin: 0; }
-button, select { font: inherit; color: inherit; }
+p, h1, h2 { margin: 0; }
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
 :lang(zh) { font-family: system-ui, sans-serif; }
-:focus-visible { outline: 2px solid var(--subtitle); outline-offset: 2px; }
-.icon { width: 1.125rem; height: 1.125rem; flex: none; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.icon { flex: none; width: 1.125rem; height: 1.125rem; }
 
 main {
-  max-width: 64rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 70rem;
+  min-height: 100svh;
   margin: 0 auto;
-  padding: 1.5rem 1rem 3rem;
-  display: grid;
-  gap: 2rem;
+  padding: 1.25rem 1rem 1.5rem;
 }
+.unsupported main { max-width: 46rem; }
 
-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: .5rem 1.5rem;
-}
+header { display: flex; align-items: center; min-height: 2.5rem; }
 hgroup { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem 1rem; }
-h1 { display: flex; align-items: center; gap: .75rem; font-size: 1.375rem; font-weight: 600; line-height: 1.3; }
-h1 svg { flex: none; width: 1.75rem; height: 1.75rem; }
-hgroup p { font-size: .875rem; color: var(--text-2); }
+h1 { display: flex; align-items: center; gap: .625rem; font-size: 1.5rem; font-weight: 600; line-height: 1.2; letter-spacing: -.01em; }
+h1 svg { flex: none; width: 2rem; height: 2rem; }
+hgroup p { font-size: .9375rem; color: var(--text-2); }
 
-#status {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  font-size: .875rem;
-  color: var(--text-2);
-  font-variant-numeric: tabular-nums;
+.player {
+  display: grid;
+  gap: .75rem;
+  padding: .75rem;
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: var(--panel);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .04), 0 32px 64px -32px rgb(0 0 0 / .8);
 }
-#status::before {
-  content: "";
-  flex: none;
-  width: .5rem;
-  height: .5rem;
-  border-radius: 50%;
-  background: var(--muted);
-}
-#status[data-state="busy"]::before { background: var(--text); animation: pulse 1.2s ease-in-out infinite; }
-#status[data-state="live"] { color: var(--text); }
-#status[data-state="live"]::before { background: var(--live); animation: pulse 1.6s ease-in-out infinite; }
-#status[data-state="error"] { color: var(--live); }
-#status[data-state="error"]::before { background: var(--live); }
-@keyframes pulse { 50% { opacity: .3; } }
-
-.player { display: grid; gap: 1rem; }
 
 #controls {
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
-  gap: .75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem 1.5rem;
   min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
-#controls label { flex: 1 1 10.5rem; min-width: 7.5rem; display: grid; gap: .5rem; font-size: .75rem; color: var(--muted); }
-#controls label:last-of-type { flex: 1.7 1 17.5rem; }
-#controls select,
-#controls button,
-#pop,
-.links a,
-#clear { transition: background-color 150ms var(--ease), color 150ms var(--ease), transform 150ms var(--ease); }
-#controls select {
-  width: 100%;
-  height: 2.5rem;
-  padding: 0 2.25rem 0 .75rem;
-  border: 1px solid var(--line-strong);
-  border-radius: .5rem;
+#controls:disabled > * { opacity: .45; }
+#controls:disabled * { cursor: not-allowed; }
+.langs { display: flex; align-items: center; gap: .375rem; flex: 1 1 24rem; max-width: 36rem; min-width: 0; }
+.langs select {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 2.75rem;
+  padding: 0 2.5rem 0 1rem;
+  border: 1px solid var(--line);
+  border-radius: .75rem;
   appearance: none;
-  background: var(--raised) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2385858b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right .75rem center / 1rem;
+  background: var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b8b94' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right .875rem center / 1rem;
   font-size: .9375rem;
-  color: var(--text);
+  font-weight: 500;
+  text-overflow: ellipsis;
   cursor: pointer;
+  transition: background-color 150ms var(--ease);
 }
+.langs select:hover:not(:disabled) { background-color: var(--field-hover); }
 #swap {
+  flex: none;
   display: grid;
   place-items: center;
   width: 2.5rem;
   height: 2.5rem;
   padding: 0;
-  border: 1px solid var(--line-strong);
-  border-radius: .5rem;
-  background: var(--raised);
+  border: 0;
+  border-radius: 50%;
+  background: none;
   color: var(--text-2);
-  cursor: pointer;
+  transition: background-color 150ms var(--ease), color 150ms var(--ease);
 }
-#action {
-  flex: none;
-  height: 2.5rem;
-  padding: 0 1.25rem;
-  border: 1px solid transparent;
+#swap:hover:not(:disabled) { background: var(--field); color: var(--text); }
+#swap svg { transition: transform 350ms var(--ease); }
+#swap[data-flip] svg { transform: rotate(180deg); }
+.engine { display: flex; align-items: center; gap: .75rem; }
+.engine > span { font-size: .8125rem; color: var(--muted); white-space: nowrap; }
+.segmented { display: flex; gap: .25rem; padding: .25rem; border: 1px solid var(--line); border-radius: .75rem; background: var(--field); }
+.segmented label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .375rem;
+  height: 2.125rem;
+  padding: 0 .875rem;
   border-radius: .5rem;
-  background: var(--text);
-  font-size: .9375rem;
+  font-size: .875rem;
   font-weight: 500;
-  color: var(--page);
+  color: var(--text-2);
+  white-space: nowrap;
   cursor: pointer;
+  transition: background-color 150ms var(--ease), color 150ms var(--ease);
 }
-#action[data-running] { border-color: var(--line-strong); background: var(--raised); color: var(--text); }
-#controls select:hover:not(:disabled),
-#swap:hover:not(:disabled),
-#action[data-running]:hover:not(:disabled) { background-color: var(--raised-hover); }
-#action:not([data-running]):hover:not(:disabled) { background: #fff; }
-#controls button:active:not(:disabled) { transform: scale(.98); }
-#controls :disabled { opacity: .4; cursor: not-allowed; }
+.segmented label:hover { color: var(--text); }
+.segmented input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: inherit; }
+.segmented label:has(:checked) { background: #303036; color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / .4), inset 0 0 0 1px rgb(255 255 255 / .06); }
+.segmented label:has(:focus-visible) { outline: 2px solid var(--brand); outline-offset: 2px; }
+.segmented label:has(:disabled) { opacity: .4; cursor: not-allowed; }
+.segmented .icon { width: 1rem; height: 1rem; }
 
 .stage {
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: .5rem;
+  align-items: center;
+  gap: .75rem;
+  width: 100%;
   aspect-ratio: 2.39 / 1;
-  padding: 3rem 1.5rem;
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-  background: var(--screen);
-  color: var(--text-2);
-  text-align: center;
-}
-.notice, #hint, .caption, .sample { word-break: auto-phrase; }
-.caption {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
+  min-height: 17rem;
+  max-height: max(17rem, 100svh - 16rem);
+  padding: 3.5rem 2rem;
   overflow: hidden;
+  border-radius: .875rem;
+  background: radial-gradient(90% 60% at 50% 0%, rgb(255 255 255 / .04), transparent 70%), var(--screen);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06);
+  text-align: center;
+  container-type: inline-size;
 }
-.tr {
-  font-size: clamp(1.375rem, 3.2vw, 2.25rem);
+.stage > :where(.bar, #action, #hint, #cloudNote, #waiting, .caption, .sample) { display: none; }
+.stage:not([data-view="live"]) > #action { display: inline-flex; }
+.stage[data-view="checking"] > #action { opacity: 0; pointer-events: none; }
+.stage:is([data-view="idle"], [data-view="starting"]):not([data-step], [data-blocked]) > #hint { display: flex; }
+.stage[data-view="idle"][data-engine="cloud"]:not([data-step], [data-blocked]) > #cloudNote { display: flex; }
+.stage[data-view="live"] > :is(.bar, .caption) { display: flex; }
+.stage[data-view="live"]:has(#capTr:empty):has(#capSrc:empty) > .caption { display: none; }
+.stage[data-view="live"]:has(#capTr:empty):has(#capSrc:empty) > #waiting { display: block; }
+.unsupported .stage > #action { display: none; }
+.unsupported .stage > .sample { display: grid; }
+.notice, #hint, #status, #waiting, .caption, .sample { word-break: auto-phrase; }
+
+#action {
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  gap: .625rem;
+  min-width: min(20rem, 100%);
+  max-width: 100%;
+  height: 3.25rem;
+  padding: 0 1.75rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: .875rem;
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: 1.0625rem;
   font-weight: 600;
-  line-height: 1.4;
-  color: var(--subtitle);
-  text-shadow: 0 2px 4px rgb(0 0 0 / .6);
-  text-wrap: balance;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .45), 0 12px 32px -12px rgb(255 216 74 / .5);
+  transition: opacity 200ms var(--ease), background-color 150ms var(--ease), color 150ms var(--ease), box-shadow 150ms var(--ease), transform 150ms var(--ease);
 }
-.src { font-size: 1rem; color: var(--text-2); }
-#capTr { min-height: 2.8em; justify-content: center; }
-#capTr p { animation: appear 200ms var(--ease); }
-@keyframes appear { from { opacity: 0; } }
-#capSrc { height: 3.2em; }
-#hint { margin: auto; max-width: 30rem; font-size: .9375rem; }
-#hint:not([hidden]) ~ .caption { display: none; }
-.sample { display: grid; gap: .5rem; }
-#pop {
+#action:hover:not(:disabled) { background: var(--brand-hover); }
+#action:active:not(:disabled) { transform: translateY(1px) scale(.99); }
+#action:disabled { background: var(--field); color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); cursor: not-allowed; }
+.stage:is([data-view="download"], [data-view="starting"]) > #action:disabled { color: var(--text); cursor: progress; }
+#action > :not(.fill) { position: relative; }
+#action :is(.i-share, .i-download, .spinner) { display: none; }
+#action[data-icon="share"] .i-share,
+#action[data-icon="download"] .i-download,
+#action[data-icon="spin"] .spinner { display: block; }
+#action .fill { position: absolute; inset: 0 auto 0 0; width: calc(var(--progress, 0) * 100%); background: rgb(255 216 74 / .24); transition: width 300ms var(--ease); }
+.stage:not([data-view="download"]) > #action .fill { display: none; }
+#action.indeterminate .fill { width: 35%; animation: sweep 1.4s var(--ease) infinite; }
+@keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+.spinner { width: 1rem; height: 1rem; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 800ms linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#status { max-width: 36rem; font-size: .9375rem; color: var(--text-2); text-wrap: pretty; }
+#status:empty { display: none; }
+#status[data-state="error"] { display: flex; gap: .5rem; color: var(--danger); text-align: left; }
+#status[data-state="error"]::before {
+  content: "";
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-top: .2em;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 8v4M12 16h.01'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+#status[data-state="ready"],
+.stage:not([data-view="idle"]) > #status:not([data-state="error"]) {
   position: absolute;
-  top: .75rem;
-  right: .75rem;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+#hint { align-items: center; gap: .625rem; max-width: 36rem; font-size: .9375rem; color: var(--text-2); text-wrap: pretty; }
+.stage[data-view="starting"] > #hint { color: var(--text); }
+.switch { position: relative; flex: none; width: 1.875rem; height: 1.125rem; border-radius: 999px; background: var(--brand); }
+.switch::after { content: ""; position: absolute; top: .1875rem; right: .1875rem; width: .75rem; height: .75rem; border-radius: 50%; background: var(--on-brand); }
+#cloudNote { align-items: center; gap: .5rem; font-size: .875rem; color: var(--muted); }
+#cloudNote .icon { width: 1rem; height: 1rem; }
+
+.bar { position: absolute; inset: 0 0 auto; align-items: center; justify-content: space-between; gap: .75rem; padding: .75rem; }
+.live {
   display: flex;
   align-items: center;
   gap: .5rem;
-  height: 2rem;
-  padding: 0 .75rem;
-  border: 1px solid var(--line-strong);
-  border-radius: .375rem;
-  background: none;
+  height: 2.25rem;
+  padding: 0 .875rem 0 .75rem;
+  border-radius: 999px;
+  background: rgb(255 77 79 / .12);
+  color: #ffc9ca;
   font-size: .8125rem;
-  color: var(--text-2);
-  cursor: pointer;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
-#pop .icon { width: 1rem; height: 1rem; }
-#pop:hover { background: var(--raised); color: var(--text); }
+.live .dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--live); animation: beat 1.6s ease-out infinite; }
+@keyframes beat { from { box-shadow: 0 0 0 0 rgb(255 77 79 / .6); } to { box-shadow: 0 0 0 .5rem rgb(255 77 79 / 0); } }
+#clock { color: rgb(255 255 255 / .7); }
+.meter { display: flex; align-items: center; gap: 2px; height: .875rem; margin-left: .125rem; }
+.meter i { width: 3px; height: 100%; border-radius: 2px; background: currentColor; transform: scaleY(calc(.35 + var(--level, 0) * var(--k))); transition: transform 80ms linear; }
+.meter i:nth-child(1) { --k: .4; }
+.meter i:nth-child(2) { --k: .65; }
+.meter i:nth-child(3) { --k: .5; }
+.meter i:nth-child(4) { --k: .3; }
+.bar-actions { display: flex; gap: .5rem; }
+.bar button,
+.pip-note button {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  height: 2.25rem;
+  padding: 0 .875rem;
+  border: 1px solid var(--line-strong);
+  border-radius: .625rem;
+  background: rgb(255 255 255 / .06);
+  font-size: .875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 150ms var(--ease);
+}
+.bar button:hover,
+.pip-note button:hover { background: rgb(255 255 255 / .11); }
+#pop { border-color: transparent; background: var(--brand); color: var(--on-brand); }
+#pop:hover { background: var(--brand-hover); }
+.bar .icon,
+.pip-note .icon { width: 1rem; height: 1rem; }
+.bar .icon-stop,
+.pip-note .icon-stop { width: .875rem; height: .875rem; }
+@container (max-width: 34rem) {
+  .bar button { padding: 0 .625rem; }
+  .bar button span { display: none; }
+}
 
-.pip { background: var(--screen); }
-.pip .stage { aspect-ratio: auto; height: 100vh; padding: 1.25rem; border: 0; border-radius: 0; }
-.pip #pop { display: none; }
+#waiting { color: var(--muted); font-size: .9375rem; animation: breathe 2.4s ease-in-out infinite; }
+@keyframes breathe { 50% { opacity: .45; } }
+.caption { flex-direction: column; justify-content: flex-end; align-self: stretch; overflow: hidden; }
+.tr { font-size: clamp(1.375rem, 3.4cqi, 2.5rem); font-weight: 600; line-height: 1.4; color: var(--brand); text-shadow: 0 2px 6px rgb(0 0 0 / .6); text-wrap: balance; }
+.src { font-size: clamp(.9375rem, 1.7cqi, 1.1875rem); line-height: 1.6; color: var(--text-2); }
+.stage[data-view="live"] { gap: .25rem; }
+#capTr { min-height: 2.8em; }
+#capTr p { animation: appear 220ms var(--ease); }
+@keyframes appear { from { opacity: 0; transform: translateY(.15em); } }
+#capSrc { height: 3.2em; }
+.sample { gap: .75rem; align-self: stretch; }
+.sample .tr { display: grid; place-items: center; min-height: 2.8em; }
+.sample .src { min-height: 3.2em; }
 
-.notice { font-size: .9375rem; text-align: center; }
-:root:not(.unsupported) :is(.notice, .sample),
-.unsupported :is(#status, #controls, #hint, .caption, .log) { display: none; }
+.pip-note {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 12rem;
+  padding: 2rem;
+  border-radius: .875rem;
+  background: var(--screen);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06);
+  color: var(--text-2);
+  text-align: center;
+}
+.pip-note div { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; }
+
+.pip { background: #000; }
+.pip .stage { height: 100vh; aspect-ratio: auto; min-height: 0; max-height: none; padding: .875rem 1.25rem; border-radius: 0; background: #000; box-shadow: none; container-type: size; }
+.pip .tr { font-size: clamp(1.125rem, min(5cqi, 18cqb), 4rem); }
+.pip .src { font-size: clamp(.8125rem, min(2.2cqi, 7cqb), 1.375rem); }
+.pip .bar { background: linear-gradient(rgb(0 0 0 / .85), rgb(0 0 0 / 0)); opacity: 0; transition: opacity 200ms var(--ease); }
+.pip .stage:hover > .bar,
+.pip .bar:focus-within { opacity: 1; }
+
+.notice { font-size: .9375rem; text-align: center; text-wrap: balance; }
+.notice .icon { margin-right: .5rem; vertical-align: -.2em; color: var(--text-2); }
+:root:not(.unsupported) .notice,
+.unsupported #controls { display: none; }
 
 .links { display: flex; justify-content: flex-end; gap: .5rem; }
 .unsupported .links { justify-content: center; }
@@ -231,51 +355,62 @@ hgroup p { font-size: .875rem; color: var(--text-2); }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 2.25rem;
+  gap: .5rem;
+  height: 2.375rem;
   padding: 0 1rem;
-  border: 1px solid var(--line-strong);
-  border-radius: .5rem;
+  border: 1px solid var(--line);
+  border-radius: .75rem;
+  color: var(--text-2);
   font-size: .875rem;
-  color: var(--text-2);
+  font-weight: 500;
   text-decoration: none;
+  transition: background-color 150ms var(--ease), color 150ms var(--ease);
 }
-.links a:hover { background: var(--raised); color: var(--text); }
+.links a:hover { background: var(--field); color: var(--text); }
+.links .icon { width: 1rem; height: 1rem; }
 
-.log { border-top: 1px solid var(--line); }
-.log:has(#log:empty) { display: none; }
-.log-head, #log li { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem 1.5rem; }
-.log-head { align-items: center; padding: .75rem 0; font-size: .75rem; color: var(--muted); }
-.log-head div { display: flex; align-items: center; justify-content: space-between; }
+.log { display: flex; flex-direction: column; flex: 1 1 0; min-height: 18rem; overflow: hidden; border: 1px solid var(--line); border-radius: 1.25rem; background: var(--panel); }
+.log:has(#log:empty),
+.unsupported .log { display: none; }
+.log-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem .75rem .75rem 1.25rem; border-bottom: 1px solid var(--line); }
+.log h2 { font-size: .9375rem; font-weight: 600; }
 #clear {
-  height: 1.75rem;
-  padding: 0 .75rem;
-  border: 1px solid var(--line-strong);
-  border-radius: .375rem;
+  height: 2rem;
+  padding: 0 .875rem;
+  border: 1px solid var(--line);
+  border-radius: .5rem;
   background: none;
-  font-size: .75rem;
+  font-size: .8125rem;
   color: var(--text-2);
-  cursor: pointer;
+  transition: background-color 150ms var(--ease), color 150ms var(--ease);
 }
-#clear:hover { background: var(--raised); color: var(--text); }
-#log { max-height: 22rem; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
-#log li { padding: .75rem 0; border-top: 1px solid var(--line); font-size: .9375rem; }
+#clear:hover { background: var(--field); color: var(--text); }
+#log { flex: 1; min-height: 0; margin: 0; padding: 0 1.25rem; overflow-y: auto; list-style: none; }
+#log li { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem 2rem; padding: .875rem 0; border-top: 1px solid var(--line); font-size: .9375rem; line-height: 1.7; }
+#log li:first-child { border-top: 0; }
 #log li p:first-child { color: var(--text-2); }
+.pending::after { content: "・"; color: var(--muted); animation: dots 1.2s steps(1) infinite; }
+@keyframes dots { 33% { content: "・・"; } 66% { content: "・・・"; } }
+
+.unsupported .stage { aspect-ratio: 16 / 9; min-height: 0; max-height: none; padding: 1.5rem 1.25rem; }
 
 @media (min-width: 40rem) {
-  main { padding: 2rem 2rem 4rem; }
-}
-@media (max-width: 64rem) {
-  #action { flex: 1 1 100%; }
+  main { gap: 1.5rem; padding: 1.75rem 2rem 2rem; }
 }
 @media (max-width: 40rem) {
-  #controls label:not(:last-of-type) { flex-basis: 0; }
+  h1 { font-size: 1.375rem; }
+  h1 svg { width: 1.75rem; height: 1.75rem; }
+  hgroup p { font-size: .875rem; }
+  .player { padding: .5rem; border-radius: 1rem; }
+  .langs { flex-basis: 100%; }
+  .engine { flex: 1 1 100%; }
+  .segmented { flex: 1; }
+  .segmented label { flex: 1; }
   .links a { flex: 1; height: 2.75rem; }
-  .log-head, #log li { grid-template-columns: 1fr; }
-  .log-head span { display: none; }
+  #log li { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
-  #status::before, #capTr p { animation: none !important; }
-  * { transition: none !important; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 </style>
 </head>
@@ -286,27 +421,44 @@ hgroup p { font-size: .875rem; color: var(--text-2); }
       <h1><svg viewBox="0 0 64 64" aria-hidden="true"><rect x=".5" y=".5" width="63" height="63" rx="14" fill="#0b0b0c" stroke="#2c2c2f"/><rect x="12" y="34" width="40" height="7" rx="3.5" fill="#ffd84a"/><rect x="20" y="46" width="24" height="5" rx="2.5" fill="#a1a1a6"/></svg>Tolk</h1>
       <p>画面の音声を同時翻訳</p>
     </hgroup>
-    <p id="status" role="status" data-state="idle"></p>
   </header>
 
   <div class="player">
     <fieldset id="controls">
-      <label>話されている言語<select id="src"></select></label>
-      <button id="swap" type="button" aria-label="言語を入れ替える"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg></button>
-      <label>字幕の言語<select id="tgt"></select></label>
-      <label>音声認識
-        <select id="engine">
-          <option value="local">端末内（外部に送信しない）</option>
-          <option value="cloud">クラウド（音声を Google に送信）</option>
-        </select>
-      </label>
-      <button id="action" type="button">画面を選んで翻訳を始める</button>
+      <div class="langs">
+        <select id="src" aria-label="話されている言語"></select>
+        <button id="swap" type="button" aria-label="言語を入れ替える"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg></button>
+        <select id="tgt" aria-label="字幕の言語"></select>
+      </div>
+      <div class="engine" role="radiogroup" aria-labelledby="engineLabel">
+        <span id="engineLabel">音声認識</span>
+        <div class="segmented">
+          <label><input type="radio" name="engine" value="local"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>端末内</label>
+          <label><input type="radio" name="engine" value="cloud"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>クラウド</label>
+        </div>
+      </div>
     </fieldset>
 
     <div id="stageHome">
-      <section id="stage" class="stage" aria-label="字幕">
-        <button id="pop" type="button" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"/><rect width="10" height="7" x="12" y="13" rx="2"/></svg>字幕を小窓に出す</button>
-        <p id="hint">共有ダイアログで「音声も共有する」をオンにしてください</p>
+      <section id="stage" class="stage" aria-label="字幕" data-view="checking">
+        <div class="bar">
+          <p class="live" aria-hidden="true"><span class="dot"></span>翻訳中<span id="clock">0:00</span><span id="meter" class="meter"><i></i><i></i><i></i><i></i></span></p>
+          <div class="bar-actions">
+            <button id="pop" type="button" aria-label="小窓で表示" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"/><rect width="10" height="7" x="12" y="13" rx="2"/></svg><span>小窓で表示</span></button>
+            <button id="stop" type="button" aria-label="停止"><svg class="icon icon-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor"/></svg><span>停止</span></button>
+          </div>
+        </div>
+        <button id="action" type="button" data-icon="share">
+          <span class="fill" aria-hidden="true"></span>
+          <svg class="icon i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="m17 8 5-5"/><path d="M17 3h5v5"/></svg>
+          <svg class="icon i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+          <span class="spinner" aria-hidden="true"></span>
+          <span id="actionLabel">画面を選んで翻訳を始める</span>
+        </button>
+        <p id="status" role="status"></p>
+        <p id="hint"><span class="switch" aria-hidden="true"></span>共有ダイアログで「音声も共有する」をオンにしてください</p>
+        <p id="cloudNote"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>音声は Google に送信されます</p>
+        <p id="waiting">音声を待っています</p>
         <div id="capTr" class="caption tr"></div>
         <div id="capSrc" class="caption src"></div>
         <div class="sample" aria-hidden="true">
@@ -314,20 +466,27 @@ hgroup p { font-size: .875rem; color: var(--text-2); }
           <p class="src" lang="en">Let's take a look at the new features</p>
         </div>
       </section>
-    </div>
-
-    <p class="notice">パソコン版 Chrome の最新版で開いてください</p>
-
-    <div class="links">
-      <a href="https://x.com/intent/tweet?text=Tolk%EF%BD%9C%E7%94%BB%E9%9D%A2%E3%81%AE%E9%9F%B3%E5%A3%B0%E3%82%92%E5%90%8C%E6%99%82%E7%BF%BB%E8%A8%B3&amp;url=https%3A%2F%2Fnoxelwork.com%2Ftolk" target="_blank" rel="noopener noreferrer">X で共有</a>
-      <a href="https://x.com/NoxelLab" target="_blank" rel="noopener noreferrer">作者X</a>
+      <div id="pipNote" class="pip-note" hidden>
+        <p>字幕を小窓に表示しています</p>
+        <div>
+          <button id="unpop" type="button">タブに戻す</button>
+          <button id="stop2" type="button"><svg class="icon icon-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor"/></svg>停止</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <section class="log" aria-label="翻訳の履歴">
+  <p class="notice"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>パソコン版 Chrome の最新版で開いてください</p>
+
+  <nav class="links" aria-label="共有と作者">
+    <a href="https://x.com/intent/tweet?text=Tolk%EF%BD%9C%E7%94%BB%E9%9D%A2%E3%81%AE%E9%9F%B3%E5%A3%B0%E3%82%92%E5%90%8C%E6%99%82%E7%BF%BB%E8%A8%B3&amp;url=https%3A%2F%2Fnoxelwork.com%2Ftolk" target="_blank" rel="noopener noreferrer"><svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>X で共有</a>
+    <a href="https://x.com/NoxelLab" target="_blank" rel="noopener noreferrer"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></svg>作者をフォロー</a>
+  </nav>
+
+  <section class="log" aria-labelledby="logTitle">
     <div class="log-head">
-      <span>原文</span>
-      <div><span>訳文</span><button id="clear" type="button">履歴を消す</button></div>
+      <h2 id="logTitle">履歴</h2>
+      <button id="clear" type="button">消す</button>
     </div>
     <ol id="log"></ol>
   </section>
@@ -356,15 +515,23 @@ const MIN_HOLD_MS = 1500;
 const MAX_HOLD_MS = 8000;
 const HOLD_PER_WORD_MS = 280;
 const MAX_LAG_MS = 8000;
+const PIP_SIZE = { width: 720, height: 240 };
 const BREAK_AFTER = /^[、。，．,.!?！？;；:：]+$/;
 const NO_PIECE_START = /^[\s、。，．,.!?！？;；:：）」』]*/;
+const DEMO = [
+  ["Let's take a look at the new features", '新しい機能を見ていきましょう'],
+  ['This is the part everyone has been waiting for', 'みなさんお待ちかねの部分です'],
+  ["Thanks for joining today's meeting", '本日の会議にご参加いただきありがとうございます'],
+];
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const $ = (id) => document.getElementById(id);
-const srcSel = $('src'), tgtSel = $('tgt'), engineSel = $('engine');
-const swapBtn = $('swap'), actionBtn = $('action'), popBtn = $('pop'), clearBtn = $('clear');
-const statusEl = $('status'), stage = $('stage'), stageHome = $('stageHome');
-const hint = $('hint'), capTr = $('capTr'), capSrc = $('capSrc'), logEl = $('log');
+const controls = $('controls'), srcSel = $('src'), tgtSel = $('tgt'), swapBtn = $('swap');
+const engineInputs = [...document.querySelectorAll('[name="engine"]')];
+const stage = $('stage'), stageHome = $('stageHome'), pipNote = $('pipNote');
+const actionBtn = $('action'), actionLabel = $('actionLabel'), statusEl = $('status');
+const popBtn = $('pop'), unpopBtn = $('unpop'), clearBtn = $('clear');
+const capTr = $('capTr'), capSrc = $('capSrc'), logEl = $('log'), clockEl = $('clock'), meterEl = $('meter');
 
 let translator = null;
 let stream = null;
@@ -372,9 +539,19 @@ let recognition = null;
 let running = false;
 let busy = false;
 let blocked = false;
+let checking = false;
+let checked = false;
 let pendingStep = null; // 'translator' | 'speech' | null
+let progress = null; // null when not downloading, 0..1, or 'indeterminate'
 let checkId = 0;
 let networkErrors = 0;
+let session = 0;
+let startedAt = 0;
+let pipWindow = null;
+let audioCtx = null;
+let analyser = null;
+let meterSource = null;
+let meterToken = 0;
 
 const finals = [];
 let translating = false;
@@ -382,60 +559,91 @@ let liveSrc = null;
 const captions = [];
 let captionRest = '';
 let captionTimer = null;
+let captionWin = window;
 let holdUntil = 0;
 
+const engine = () => engineInputs.find((input) => input.checked)?.value ?? 'cloud';
 const pair = () => ({ sourceLanguage: srcSel.value, targetLanguage: tgtSel.value });
 const locale = () => LOCALES.get(srcSel.value);
+const stageWindow = () => stage.ownerDocument.defaultView;
 
-function setStatus(state, text) {
+function setStatus(state, text = '') {
   statusEl.dataset.state = state;
   statusEl.textContent = text;
 }
 
-function renderAction() {
-  actionBtn.textContent = running ? '翻訳を止める'
-    : pendingStep === 'translator' ? '翻訳モデルを準備する'
-    : pendingStep === 'speech' ? '音声認識パックを準備する'
-    : '画面を選んで翻訳を始める';
-  actionBtn.toggleAttribute('data-running', running);
+function render() {
+  const view = running ? 'live' : busy ? (progress === null ? 'starting' : 'download') : checked ? 'idle' : 'checking';
+  stage.dataset.view = view;
+  stage.dataset.engine = engine();
+  stage.toggleAttribute('data-step', Boolean(pendingStep));
+  stage.toggleAttribute('data-blocked', blocked);
+  controls.disabled = running || busy;
   actionBtn.disabled = busy || blocked;
-  for (const el of [srcSel, tgtSel, engineSel, swapBtn]) el.disabled = running || busy;
+
+  const item = pendingStep === 'speech' ? '音声認識パック' : '翻訳モデル';
+  let icon = 'share';
+  let label = '画面を選んで翻訳を始める';
+  if (view === 'starting') {
+    icon = 'spin';
+    label = '画面を選んでいます';
+  } else if (view === 'download') {
+    icon = 'none';
+    label = typeof progress === 'number'
+      ? `${item}をダウンロード中 ${Math.floor(progress * 10) * 10}%`
+      : `${item}をダウンロード中`;
+  } else if (pendingStep) {
+    icon = 'download';
+    label = `${item}を準備する`;
+  }
+  actionBtn.dataset.icon = icon;
+  actionLabel.textContent = label;
+  actionBtn.classList.toggle('indeterminate', progress === 'indeterminate');
+  actionBtn.style.setProperty('--progress', typeof progress === 'number' ? progress : 0);
+
+  popBtn.hidden = !running || pipWindow !== null || !('documentPictureInPicture' in window);
+  pipNote.hidden = pipWindow === null;
 }
 
 async function check() {
   const id = ++checkId;
-  pendingStep = null;
-  blocked = true;
-  renderAction();
+  checking = true;
+  render();
 
   let problem = null;
+  let step = null;
   if (srcSel.value === tgtSel.value) {
     problem = '話されている言語と字幕の言語を別々に選んでください';
   } else {
     try {
       const translation = translator ? 'available' : await Translator.availability(pair());
-      const speech = engineSel.value === 'local'
+      const speech = engine() === 'local'
         ? await SR.available({ langs: [locale()], processLocally: true })
         : 'available';
       if (id !== checkId) return;
       if (translation === 'unavailable') problem = 'この言語の組み合わせは翻訳できません';
       else if (speech === 'unavailable') problem = 'この言語は端末内の音声認識に対応していません。クラウドに切り替えてください。';
-      else pendingStep = translation !== 'available' ? 'translator' : speech !== 'available' ? 'speech' : null;
+      else step = translation !== 'available' ? 'translator' : speech !== 'available' ? 'speech' : null;
     } catch (e) {
       if (id !== checkId) return;
       problem = `対応状況を確認できませんでした（${e.message}）`;
     }
   }
 
+  checking = false;
+  checked = true;
+  pendingStep = step;
   blocked = Boolean(problem);
   if (problem) setStatus('error', problem);
-  else setStatus('idle', pendingStep ? '初回のみモデルのダウンロードが必要です' : '準備ができました');
-  renderAction();
+  else if (step) setStatus('note', '初回のみダウンロードが必要です');
+  else setStatus('ready', '準備ができました');
+  render();
 }
 
 async function prepare() {
   busy = true;
-  renderAction();
+  progress = pendingStep === 'translator' ? 0 : 'indeterminate';
+  render();
   try {
     if (pendingStep === 'translator') {
       setStatus('busy', '翻訳モデルを準備中');
@@ -443,8 +651,10 @@ async function prepare() {
         ...pair(),
         monitor(m) {
           m.addEventListener('downloadprogress', (e) => {
+            progress = e.loaded;
             const text = `翻訳モデルをダウンロード中 ${Math.floor(e.loaded * 10) * 10}%`;
             if (statusEl.textContent !== text) setStatus('busy', text);
+            render();
           });
         },
       });
@@ -455,23 +665,35 @@ async function prepare() {
     }
   } catch (e) {
     busy = false;
+    progress = null;
     setStatus('error', `準備に失敗しました（${e.message}）`);
-    renderAction();
+    render();
     return;
   }
   busy = false;
+  progress = null;
   await check();
 }
 
 async function start() {
+  audioCtx ??= new AudioContext();
+  audioCtx.resume().catch(() => {});
   busy = true;
-  renderAction();
+  setStatus('busy', '共有する画面を選んでください');
+  render();
+
+  // Keep Tolk in front after a tab is shared, so the subtitles can be popped out right away.
+  const controller = 'CaptureController' in window ? new CaptureController() : undefined;
+  try {
+    controller?.setFocusBehavior?.('focus-capturing-application');
+  } catch {}
   try {
     stream = await navigator.mediaDevices.getDisplayMedia({
       video: true,
       audio: true,
       systemAudio: 'include',
       selfBrowserSurface: 'exclude',
+      controller,
     });
   } catch (e) {
     if (e.name === 'NotAllowedError') stop('画面の共有をキャンセルしました');
@@ -482,11 +704,11 @@ async function start() {
   const current = stream;
   const [track] = stream.getAudioTracks();
   if (!track) {
-    stop('音声が共有されていません。共有ダイアログで「音声も共有する」をオンにして選び直してください。', 'error');
+    stop('音声が共有されていません', 'error');
     return;
   }
   stream.getVideoTracks().forEach((t) => t.stop());
-  track.addEventListener('ended', () => stop('画面の共有が終わりました'));
+  track.addEventListener('ended', () => stop('画面の共有が終わりました', 'note'));
 
   try {
     translator ??= await Translator.create(pair());
@@ -498,22 +720,27 @@ async function start() {
 
   busy = false;
   running = true;
+  session++;
   networkErrors = 0;
-  hint.hidden = true;
-  setStatus('live', '認識中');
-  renderAction();
+  startedAt = Date.now();
+  setStatus('live', '翻訳中');
+  startMeter(track);
+  render();
   listen(track);
 }
 
-function stop(text = '翻訳を止めました', state = 'idle') {
+function stop(text = '翻訳を止めました', state = 'ready') {
   running = false;
   busy = false;
   recognition?.abort();
   recognition = null;
   stream?.getTracks().forEach((t) => t.stop());
   stream = null;
+  stopMeter();
+  pipWindow?.close();
+  clearCaptions();
   setStatus(state, text);
-  renderAction();
+  render();
 }
 
 function listen(track) {
@@ -522,7 +749,7 @@ function listen(track) {
   rec.lang = locale();
   rec.continuous = true;
   rec.interimResults = true;
-  if (engineSel.value === 'local') rec.processLocally = true;
+  if (engine() === 'local') rec.processLocally = true;
 
   const begin = () => {
     if (!running || recognition !== rec) return;
@@ -554,6 +781,50 @@ function listen(track) {
   rec.onend = () => setTimeout(begin, RESTART_DELAY_MS);
 
   begin();
+}
+
+function startMeter(track) {
+  try {
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 1024;
+    meterSource = audioCtx.createMediaStreamSource(new MediaStream([track]));
+    meterSource.connect(analyser);
+  } catch {
+    analyser = null;
+  }
+  runMeter();
+}
+
+// Runs on the window that currently shows the stage, so a visible picture-in-picture window keeps it going.
+function runMeter() {
+  const token = ++meterToken;
+  const samples = analyser && new Float32Array(analyser.fftSize);
+  let level = 0;
+  let shown = '';
+  const tick = () => {
+    if (token !== meterToken) return;
+    if (samples) {
+      analyser.getFloatTimeDomainData(samples);
+      let sum = 0;
+      for (const v of samples) sum += v * v;
+      level = Math.max(Math.min(1, Math.sqrt(Math.sqrt(sum / samples.length)) * 1.6), level * .9);
+      meterEl.style.setProperty('--level', level.toFixed(2));
+    }
+    const seconds = Math.floor((Date.now() - startedAt) / 1000);
+    const text = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+    if (text !== shown) clockEl.textContent = shown = text;
+    stageWindow().requestAnimationFrame(tick);
+  };
+  tick();
+}
+
+function stopMeter() {
+  meterToken++;
+  meterSource?.disconnect();
+  meterSource = null;
+  analyser = null;
+  meterEl.style.removeProperty('--level');
+  audioCtx?.suspend().catch(() => {});
 }
 
 function showSource(text) {
@@ -603,9 +874,20 @@ function queueCaption(text) {
 
 const readTime = (text) => [...wordsOf(text)].filter((s) => s.isWordLike).length * HOLD_PER_WORD_MS;
 
+// Timers run on the window that shows the stage: a hidden tab is throttled, a visible picture-in-picture window is not.
 function scheduleCaption() {
   if (captionTimer || !(captionRest || captions.length)) return;
-  captionTimer = setTimeout(showCaption, Math.max(0, holdUntil - Date.now()));
+  captionWin = stageWindow();
+  captionTimer = captionWin.setTimeout(showCaption, Math.max(0, holdUntil - Date.now()));
+}
+
+function cancelCaptionTimer() {
+  if (!captionTimer) return false;
+  try {
+    captionWin.clearTimeout(captionTimer);
+  } catch {}
+  captionTimer = null;
+  return true;
 }
 
 function showCaption() {
@@ -621,6 +903,16 @@ function showCaption() {
   scheduleCaption();
 }
 
+function clearCaptions() {
+  cancelCaptionTimer();
+  captions.length = 0;
+  captionRest = '';
+  holdUntil = 0;
+  liveSrc = null;
+  capTr.replaceChildren();
+  capSrc.replaceChildren();
+}
+
 function commit(text) {
   if (!text) return;
   showSource(text);
@@ -633,17 +925,19 @@ function commit(text) {
   source.lang = srcSel.value;
   translated.lang = tgtSel.value;
   source.textContent = text;
-  translated.textContent = '…';
+  translated.className = 'pending';
   item.append(source, translated);
   const pinned = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 40;
   logEl.append(item);
   if (pinned) logEl.scrollTop = logEl.scrollHeight;
 
+  const id = session;
   finals.push({
     text,
     done(out) {
+      translated.classList.remove('pending');
       translated.textContent = out ?? '（翻訳できませんでした）';
-      if (out !== null) queueCaption(out);
+      if (out !== null && running && id === session) queueCaption(out);
     },
   });
   pump();
@@ -682,7 +976,7 @@ function loadPrefs() {
 
 function savePrefs() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ src: srcSel.value, tgt: tgtSel.value, engine: engineSel.value }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ src: srcSel.value, tgt: tgtSel.value, engine: engine() }));
   } catch {}
 }
 
@@ -700,41 +994,88 @@ function initControls() {
   capSrc.lang = srcSel.value;
   capTr.lang = tgtSel.value;
 
-  const localOption = engineSel.querySelector('[value="local"]');
-  localOption.disabled = !SR.available;
-  if (localOption.disabled || prefs.engine === 'cloud') engineSel.value = 'cloud';
+  const local = engineInputs.find((input) => input.value === 'local');
+  local.disabled = !SR.available;
+  const chosen = local.disabled || prefs.engine === 'cloud' ? 'cloud' : 'local';
+  engineInputs.find((input) => input.value === chosen).checked = true;
 }
 
 async function popOut() {
   try {
-    const pip = await documentPictureInPicture.requestWindow({ width: 640, height: 240 });
+    const pip = await documentPictureInPicture.requestWindow(PIP_SIZE);
     pip.document.documentElement.lang = 'ja';
+    pip.document.title = 'Tolk';
     pip.document.head.append(
       ...[...document.querySelectorAll('style, link[rel="stylesheet"]')].map((node) => node.cloneNode(true)),
     );
     pip.document.body.className = 'pip';
     pip.document.body.append(stage);
-    pip.addEventListener('pagehide', () => stageHome.append(stage));
+    pip.addEventListener('pagehide', () => {
+      stageHome.prepend(stage);
+      pipWindow = null;
+      stageMoved();
+    });
+    pipWindow = pip;
+    stageMoved();
   } catch (e) {
     setStatus('error', `小窓を開けませんでした（${e.message}）`);
   }
 }
 
-if (!document.documentElement.classList.contains('unsupported')) {
+function stageMoved() {
+  if (cancelCaptionTimer()) scheduleCaption();
+  if (running) runMeter();
+  render();
+}
+
+function playDemo() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const tr = document.querySelector('.sample .tr');
+  const src = document.querySelector('.sample .src');
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  (async () => {
+    for (let i = 1; ; i = (i + 1) % DEMO.length) {
+      await wait(2600);
+      const [source, translation] = DEMO[i];
+      const words = source.split(' ');
+      for (let n = 1; n <= words.length; n++) {
+        src.textContent = words.slice(0, n).join(' ');
+        await wait(160);
+      }
+      await wait(300);
+      tr.textContent = translation;
+      tr.animate([{ opacity: 0, transform: 'translateY(.15em)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+    }
+  })();
+}
+
+if (document.documentElement.classList.contains('unsupported')) {
+  playDemo();
+} else {
   initControls();
-  actionBtn.addEventListener('click', () => (running ? stop() : pendingStep ? prepare() : start()));
+  actionBtn.addEventListener('click', () => {
+    if (checking || busy || running) return;
+    if (pendingStep) prepare();
+    else start();
+  });
   srcSel.addEventListener('change', languageChanged);
   tgtSel.addEventListener('change', languageChanged);
-  engineSel.addEventListener('change', () => { savePrefs(); check(); });
+  for (const input of engineInputs) {
+    input.addEventListener('change', () => {
+      savePrefs();
+      check();
+    });
+  }
   swapBtn.addEventListener('click', () => {
     [srcSel.value, tgtSel.value] = [tgtSel.value, srcSel.value];
+    swapBtn.toggleAttribute('data-flip');
     languageChanged();
   });
+  popBtn.addEventListener('click', popOut);
+  unpopBtn.addEventListener('click', () => pipWindow?.close());
+  for (const button of [$('stop'), $('stop2')]) button.addEventListener('click', () => stop());
   clearBtn.addEventListener('click', () => logEl.replaceChildren());
-  if ('documentPictureInPicture' in window) {
-    popBtn.hidden = false;
-    popBtn.addEventListener('click', popOut);
-  }
+  render();
   check();
 }
 </script>
