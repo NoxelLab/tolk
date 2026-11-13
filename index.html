@@ -3,20 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>画面の音声を同時翻訳</title>
+<title>Tolk｜画面の音声を同時翻訳</title>
 <meta name="description" content="共有した画面やタブの音声を聞き取り、字幕にして訳します。">
 <meta name="theme-color" content="#141415">
-<link rel="canonical" href="https://noxelwork.com/scrn-translator">
-<link rel="icon" href="/scrn-translator/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://noxelwork.com/tolk">
+<link rel="icon" href="/tolk/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ja_JP">
-<meta property="og:url" content="https://noxelwork.com/scrn-translator">
-<meta property="og:title" content="画面の音声を同時翻訳">
+<meta property="og:url" content="https://noxelwork.com/tolk">
+<meta property="og:title" content="Tolk｜画面の音声を同時翻訳">
 <meta property="og:description" content="共有した画面やタブの音声を聞き取り、字幕にして訳します。">
-<meta property="og:image" content="https://noxelwork.com/scrn-translator/ogp.png?v=2">
+<meta property="og:image" content="https://noxelwork.com/tolk/ogp.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="黒い画面に黄色で表示された日本語の字幕と英語の原文">
+<meta property="og:image:alt" content="Tolk の名前と、黒い画面に黄色で表示された日本語の字幕と英語の原文">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@NoxelLab">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -70,8 +70,10 @@ header {
   justify-content: space-between;
   gap: .5rem 1.5rem;
 }
-h1 { display: flex; align-items: center; gap: .75rem; font-size: 1.375rem; font-weight: 500; line-height: 1.3; }
+hgroup { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem 1rem; }
+h1 { display: flex; align-items: center; gap: .75rem; font-size: 1.375rem; font-weight: 600; line-height: 1.3; }
 h1 svg { flex: none; width: 1.75rem; height: 1.75rem; }
+hgroup p { font-size: .875rem; color: var(--text-2); }
 
 #status {
   display: flex;
@@ -280,7 +282,10 @@ h1 svg { flex: none; width: 1.75rem; height: 1.75rem; }
 <body>
 <main>
   <header>
-    <h1><svg viewBox="0 0 64 64" aria-hidden="true"><rect x=".5" y=".5" width="63" height="63" rx="14" fill="#0b0b0c" stroke="#2c2c2f"/><rect x="12" y="34" width="40" height="7" rx="3.5" fill="#ffd84a"/><rect x="20" y="46" width="24" height="5" rx="2.5" fill="#a1a1a6"/></svg>画面の音声を同時翻訳</h1>
+    <hgroup>
+      <h1><svg viewBox="0 0 64 64" aria-hidden="true"><rect x=".5" y=".5" width="63" height="63" rx="14" fill="#0b0b0c" stroke="#2c2c2f"/><rect x="12" y="34" width="40" height="7" rx="3.5" fill="#ffd84a"/><rect x="20" y="46" width="24" height="5" rx="2.5" fill="#a1a1a6"/></svg>Tolk</h1>
+      <p>画面の音声を同時翻訳</p>
+    </hgroup>
     <p id="status" role="status" data-state="idle"></p>
   </header>
 
@@ -314,7 +319,7 @@ h1 svg { flex: none; width: 1.75rem; height: 1.75rem; }
     <p class="notice">パソコン版 Chrome の最新版で開いてください</p>
 
     <div class="links">
-      <a href="https://x.com/intent/tweet?text=%E7%94%BB%E9%9D%A2%E3%81%AE%E9%9F%B3%E5%A3%B0%E3%82%92%E5%90%8C%E6%99%82%E7%BF%BB%E8%A8%B3&amp;url=https%3A%2F%2Fnoxelwork.com%2Fscrn-translator" target="_blank" rel="noopener noreferrer">X で共有</a>
+      <a href="https://x.com/intent/tweet?text=Tolk%EF%BD%9C%E7%94%BB%E9%9D%A2%E3%81%AE%E9%9F%B3%E5%A3%B0%E3%82%92%E5%90%8C%E6%99%82%E7%BF%BB%E8%A8%B3&amp;url=https%3A%2F%2Fnoxelwork.com%2Ftolk" target="_blank" rel="noopener noreferrer">X で共有</a>
       <a href="https://x.com/NoxelLab" target="_blank" rel="noopener noreferrer">作者X</a>
     </div>
   </div>
