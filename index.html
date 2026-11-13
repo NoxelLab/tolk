@@ -177,6 +177,7 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
 .segmented label:hover { color: var(--text); }
 .segmented input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: inherit; }
 .segmented label:has(:checked) { background: #3f3f46; color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / .45), inset 0 0 0 1px rgb(255 255 255 / .08); }
+.segmented label:has([value="plamo"]:checked) { color: var(--brand); }
 .segmented label:has(:focus-visible) { outline: 2px solid var(--brand); outline-offset: 2px; }
 .segmented label:has(:disabled) { opacity: .45; cursor: not-allowed; }
 .segmented .icon { width: 1rem; height: 1rem; }
