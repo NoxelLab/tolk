@@ -154,6 +154,7 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
 #swap:hover:not(:disabled) { background: var(--field); color: var(--text); }
 #swap svg { transition: transform 350ms var(--ease); }
 #swap[data-flip] svg { transform: rotate(180deg); }
+.options { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; }
 .engine { display: flex; align-items: center; gap: .75rem; }
 .engine > span { font-size: .875rem; color: var(--muted); white-space: nowrap; }
 .segmented { display: flex; gap: .25rem; padding: .25rem; border: 1px solid var(--line-strong); border-radius: .75rem; background: var(--field); }
@@ -199,7 +200,8 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
   text-align: center;
   container-type: inline-size;
 }
-.stage > :where(.bar, #action, #hint, #cloudNote, #waiting, .caption, .sample) { display: none; }
+.stage > :where(.bar, #action, #hint, #cloudNote, #plamoNote, #waiting, .caption, .sample) { display: none; }
+.stage:not([data-view="live"])[data-mt="plamo"] > #plamoNote { display: block; }
 .stage:not([data-view="live"]) > #action { display: inline-flex; }
 .stage[data-view="checking"] > #action { opacity: 0; pointer-events: none; }
 .stage:is([data-view="idle"], [data-view="starting"]):not([data-step], [data-blocked]) > #hint { display: flex; }
@@ -276,6 +278,8 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
 .switch::after { content: ""; position: absolute; top: .1875rem; inset-inline-end: .1875rem; width: .75rem; height: .75rem; border-radius: 50%; background: var(--on-brand); }
 #cloudNote { align-items: center; gap: .5rem; font-size: .9375rem; color: var(--muted); }
 #cloudNote .icon { width: 1rem; height: 1rem; }
+#plamoNote a { font-size: .875rem; color: var(--muted); text-underline-offset: .2em; }
+#plamoNote a:hover { color: var(--text); }
 
 .bar { position: absolute; inset: 0 0 auto; align-items: center; justify-content: space-between; gap: .75rem; padding: .75rem; }
 .live {
@@ -428,7 +432,7 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
   hgroup p { font-size: .9375rem; }
   .player { padding: .5rem; border-radius: 1rem; }
   .langs { flex-basis: 100%; }
-  .engine { flex: 1 1 100%; }
+  .options, .engine { flex: 1 1 100%; }
   .segmented { flex: 1; }
   .segmented label { flex: 1; }
   .links a { flex: 1 1 8rem; height: 2.75rem; padding: 0 .75rem; }
@@ -459,11 +463,20 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
         <button id="swap" type="button" aria-label="言語を入れ替える" data-i18n-label="swap"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg></button>
         <select id="tgt" aria-label="字幕の言語" data-i18n-label="tgt"></select>
       </div>
-      <div class="engine" role="radiogroup" aria-labelledby="engineLabel">
-        <span id="engineLabel" data-i18n="engine">音声認識</span>
-        <div class="segmented">
-          <label><input type="radio" name="engine" value="local"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span data-i18n="local">端末内</span></label>
-          <label><input type="radio" name="engine" value="cloud"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg><span data-i18n="cloud">クラウド</span></label>
+      <div class="options">
+        <div class="engine" role="radiogroup" aria-labelledby="engineLabel">
+          <span id="engineLabel" data-i18n="engine">音声認識</span>
+          <div class="segmented">
+            <label><input type="radio" name="engine" value="local"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span data-i18n="local">端末内</span></label>
+            <label><input type="radio" name="engine" value="cloud"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg><span data-i18n="cloud">クラウド</span></label>
+          </div>
+        </div>
+        <div class="engine" role="radiogroup" aria-labelledby="mtLabel">
+          <span id="mtLabel" data-i18n="translation">翻訳</span>
+          <div class="segmented">
+            <label><input type="radio" name="mt" value="chrome">Chrome</label>
+            <label><input type="radio" name="mt" value="plamo">PLaMo</label>
+          </div>
         </div>
       </div>
     </fieldset>
@@ -487,6 +500,7 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
         <p id="status" role="status"></p>
         <p id="hint"><span class="switch" aria-hidden="true"></span><span data-i18n="hint">共有ダイアログで「音声も共有する」をオンにしてください</span></p>
         <p id="cloudNote"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg><span data-i18n="cloudNote">音声は Google に送信されます</span></p>
+        <p id="plamoNote"><a id="plamoLink" href="https://plamo.preferredai.jp/info/plamo-community-license-ja" target="_blank" rel="noopener noreferrer">Built with PLaMo</a></p>
         <p id="waiting" data-i18n="waiting">音声を待っています</p>
         <div id="capTr" class="caption tr"></div>
         <div id="capSrc" class="caption src"></div>
@@ -542,6 +556,11 @@ const I18N = {
     engine: '音声認識',
     local: '端末内',
     cloud: 'クラウド',
+    translation: '翻訳',
+    getPlamo: 'PLaMo をダウンロード（570MB）',
+    downloadingPlamo: 'PLaMo をダウンロード中 {p}%',
+    loadingPlamo: 'PLaMo を読み込み中',
+    plamoUnsupported: 'PLaMo は{l}に対応していません。翻訳を Chrome に切り替えてください。',
     stage: '字幕',
     live: '翻訳中',
     pop: '小窓で表示',
@@ -600,6 +619,11 @@ const I18N = {
     engine: 'Speech recognition',
     local: 'On device',
     cloud: 'Cloud',
+    translation: 'Translation',
+    getPlamo: 'Download PLaMo (570 MB)',
+    downloadingPlamo: 'Downloading PLaMo {p}%',
+    loadingPlamo: 'Loading PLaMo',
+    plamoUnsupported: 'PLaMo doesn’t support {l}. Switch translation to Chrome.',
     stage: 'Subtitles',
     live: 'Translating',
     pop: 'Pop out',
@@ -658,6 +682,11 @@ const I18N = {
     engine: '语音识别',
     local: '本机',
     cloud: '云端',
+    translation: '翻译',
+    getPlamo: '下载 PLaMo（570MB）',
+    downloadingPlamo: '正在下载 PLaMo {p}%',
+    loadingPlamo: '正在加载 PLaMo',
+    plamoUnsupported: 'PLaMo 不支持{l}，请将翻译切换为 Chrome。',
     stage: '字幕',
     live: '翻译中',
     pop: '小窗显示',
@@ -716,6 +745,11 @@ const I18N = {
     engine: '語音辨識',
     local: '本機',
     cloud: '雲端',
+    translation: '翻譯',
+    getPlamo: '下載 PLaMo（570MB）',
+    downloadingPlamo: '正在下載 PLaMo {p}%',
+    loadingPlamo: '正在載入 PLaMo',
+    plamoUnsupported: 'PLaMo 不支援{l}，請將翻譯切換為 Chrome。',
     stage: '字幕',
     live: '翻譯中',
     pop: '小視窗顯示',
@@ -774,6 +808,11 @@ const I18N = {
     engine: '음성 인식',
     local: '기기 내',
     cloud: '클라우드',
+    translation: '번역',
+    getPlamo: 'PLaMo 다운로드(570MB)',
+    downloadingPlamo: 'PLaMo 다운로드 중 {p}%',
+    loadingPlamo: 'PLaMo 불러오는 중',
+    plamoUnsupported: 'PLaMo는 {l} 번역을 지원하지 않습니다. 번역을 Chrome으로 바꿔 주세요.',
     stage: '자막',
     live: '번역 중',
     pop: '작은 창으로 보기',
@@ -832,6 +871,11 @@ const I18N = {
     engine: 'Reconocimiento de voz',
     local: 'En el dispositivo',
     cloud: 'Nube',
+    translation: 'Traducción',
+    getPlamo: 'Descargar PLaMo (570 MB)',
+    downloadingPlamo: 'Descargando PLaMo {p} %',
+    loadingPlamo: 'Cargando PLaMo',
+    plamoUnsupported: 'PLaMo no admite el idioma {l}. Cambia la traducción a Chrome.',
     stage: 'Subtítulos',
     live: 'Traduciendo',
     pop: 'Ventana flotante',
@@ -890,6 +934,11 @@ const I18N = {
     engine: 'Reconnaissance vocale',
     local: 'Sur l’appareil',
     cloud: 'Cloud',
+    translation: 'Traduction',
+    getPlamo: 'Télécharger PLaMo (570 Mo)',
+    downloadingPlamo: 'Téléchargement de PLaMo {p} %',
+    loadingPlamo: 'Chargement de PLaMo',
+    plamoUnsupported: 'PLaMo ne prend pas en charge la langue {l}. Passez la traduction à Chrome.',
     stage: 'Sous-titres',
     live: 'Traduction en cours',
     pop: 'Fenêtre flottante',
@@ -948,6 +997,11 @@ const I18N = {
     engine: 'Spracherkennung',
     local: 'Auf dem Gerät',
     cloud: 'Cloud',
+    translation: 'Übersetzung',
+    getPlamo: 'PLaMo herunterladen (570 MB)',
+    downloadingPlamo: 'PLaMo wird geladen {p} %',
+    loadingPlamo: 'PLaMo wird gestartet',
+    plamoUnsupported: 'PLaMo unterstützt {l} nicht. Stelle die Übersetzung auf Chrome um.',
     stage: 'Untertitel',
     live: 'Übersetzung läuft',
     pop: 'Bild-im-Bild',
@@ -1006,6 +1060,11 @@ const I18N = {
     engine: 'Riconoscimento vocale',
     local: 'Sul dispositivo',
     cloud: 'Cloud',
+    translation: 'Traduzione',
+    getPlamo: 'Scarica PLaMo (570 MB)',
+    downloadingPlamo: 'Download di PLaMo {p}%',
+    loadingPlamo: 'Caricamento di PLaMo',
+    plamoUnsupported: 'PLaMo non supporta la lingua {l}. Passa la traduzione a Chrome.',
     stage: 'Sottotitoli',
     live: 'Traduzione in corso',
     pop: 'Finestra mobile',
@@ -1064,6 +1123,11 @@ const I18N = {
     engine: 'Reconhecimento de voz',
     local: 'No dispositivo',
     cloud: 'Nuvem',
+    translation: 'Tradução',
+    getPlamo: 'Baixar o PLaMo (570 MB)',
+    downloadingPlamo: 'Baixando o PLaMo {p}%',
+    loadingPlamo: 'Carregando o PLaMo',
+    plamoUnsupported: 'O PLaMo não oferece suporte ao idioma {l}. Mude a tradução para Chrome.',
     stage: 'Legendas',
     live: 'Traduzindo',
     pop: 'Janela flutuante',
@@ -1122,6 +1186,11 @@ const I18N = {
     engine: 'Распознавание речи',
     local: 'На устройстве',
     cloud: 'Облако',
+    translation: 'Перевод',
+    getPlamo: 'Скачать PLaMo (570 МБ)',
+    downloadingPlamo: 'Загрузка PLaMo {p}%',
+    loadingPlamo: 'Запуск PLaMo',
+    plamoUnsupported: 'PLaMo не поддерживает язык «{l}». Переключите перевод на Chrome.',
     stage: 'Субтитры',
     live: 'Идёт перевод',
     pop: 'Отдельное окно',
@@ -1180,6 +1249,11 @@ const I18N = {
     engine: 'आवाज़ पहचान',
     local: 'डिवाइस पर',
     cloud: 'क्लाउड',
+    translation: 'अनुवाद',
+    getPlamo: 'PLaMo डाउनलोड करें (570 MB)',
+    downloadingPlamo: 'PLaMo डाउनलोड हो रहा है {p}%',
+    loadingPlamo: 'PLaMo लोड हो रहा है',
+    plamoUnsupported: 'PLaMo {l} को सपोर्ट नहीं करता। अनुवाद को Chrome पर बदलें।',
     stage: 'सबटाइटल',
     live: 'अनुवाद हो रहा है',
     pop: 'छोटी विंडो में दिखाएँ',
@@ -1238,6 +1312,11 @@ const I18N = {
     engine: 'Pengenalan suara',
     local: 'Di perangkat',
     cloud: 'Cloud',
+    translation: 'Terjemahan',
+    getPlamo: 'Unduh PLaMo (570 MB)',
+    downloadingPlamo: 'Mengunduh PLaMo {p}%',
+    loadingPlamo: 'Memuat PLaMo',
+    plamoUnsupported: 'PLaMo tidak mendukung bahasa {l}. Ubah terjemahan ke Chrome.',
     stage: 'Subtitle',
     live: 'Menerjemahkan',
     pop: 'Jendela mengambang',
@@ -1296,6 +1375,11 @@ const I18N = {
     engine: 'Nhận dạng giọng nói',
     local: 'Trên thiết bị',
     cloud: 'Đám mây',
+    translation: 'Dịch',
+    getPlamo: 'Tải PLaMo (570 MB)',
+    downloadingPlamo: 'Đang tải PLaMo {p}%',
+    loadingPlamo: 'Đang nạp PLaMo',
+    plamoUnsupported: 'PLaMo không hỗ trợ {l}. Hãy chuyển bản dịch sang Chrome.',
     stage: 'Phụ đề',
     live: 'Đang dịch',
     pop: 'Cửa sổ nổi',
@@ -1354,6 +1438,11 @@ const I18N = {
     engine: 'การจดจำเสียงพูด',
     local: 'ในอุปกรณ์',
     cloud: 'คลาวด์',
+    translation: 'การแปล',
+    getPlamo: 'ดาวน์โหลด PLaMo (570 MB)',
+    downloadingPlamo: 'กำลังดาวน์โหลด PLaMo {p}%',
+    loadingPlamo: 'กำลังโหลด PLaMo',
+    plamoUnsupported: 'PLaMo ไม่รองรับ{l} โปรดเปลี่ยนการแปลเป็น Chrome',
     stage: 'คำบรรยาย',
     live: 'กำลังแปล',
     pop: 'หน้าต่างลอย',
@@ -1412,6 +1501,11 @@ const I18N = {
     engine: 'التعرّف على الكلام',
     local: 'على الجهاز',
     cloud: 'السحابة',
+    translation: 'الترجمة',
+    getPlamo: 'تنزيل PLaMo (570 ميغابايت)',
+    downloadingPlamo: 'جارٍ تنزيل PLaMo {p}%',
+    loadingPlamo: 'جارٍ تحميل PLaMo',
+    plamoUnsupported: 'لا يدعم PLaMo اللغة {l}. بدّل الترجمة إلى Chrome.',
     stage: 'الترجمة النصية',
     live: 'جارٍ الترجمة',
     pop: 'نافذة عائمة',
@@ -1470,6 +1564,11 @@ const I18N = {
     engine: 'Konuşma tanıma',
     local: 'Cihazda',
     cloud: 'Bulut',
+    translation: 'Çeviri',
+    getPlamo: 'PLaMo’yu indir (570 MB)',
+    downloadingPlamo: 'PLaMo indiriliyor %{p}',
+    loadingPlamo: 'PLaMo yükleniyor',
+    plamoUnsupported: 'PLaMo {l} dilini desteklemiyor. Çeviriyi Chrome’a geçirin.',
     stage: 'Altyazı',
     live: 'Çevriliyor',
     pop: 'Küçük pencere',
@@ -1528,6 +1627,11 @@ const I18N = {
     engine: 'Spraakherkenning',
     local: 'Op apparaat',
     cloud: 'Cloud',
+    translation: 'Vertaling',
+    getPlamo: 'PLaMo downloaden (570 MB)',
+    downloadingPlamo: 'PLaMo downloaden {p}%',
+    loadingPlamo: 'PLaMo laden',
+    plamoUnsupported: 'PLaMo ondersteunt {l} niet. Zet de vertaling op Chrome.',
     stage: 'Ondertiteling',
     live: 'Bezig met vertalen',
     pop: 'Zwevend venster',
@@ -1586,6 +1690,11 @@ const I18N = {
     engine: 'Rozpoznawanie mowy',
     local: 'Na urządzeniu',
     cloud: 'Chmura',
+    translation: 'Tłumaczenie',
+    getPlamo: 'Pobierz PLaMo (570 MB)',
+    downloadingPlamo: 'Pobieranie PLaMo {p}%',
+    loadingPlamo: 'Wczytywanie PLaMo',
+    plamoUnsupported: 'PLaMo nie obsługuje języka: {l}. Przełącz tłumaczenie na Chrome.',
     stage: 'Napisy',
     live: 'Tłumaczenie',
     pop: 'Pływające okno',
@@ -1644,6 +1753,11 @@ const I18N = {
     engine: 'Розпізнавання мовлення',
     local: 'На пристрої',
     cloud: 'Хмара',
+    translation: 'Переклад',
+    getPlamo: 'Завантажити PLaMo (570 МБ)',
+    downloadingPlamo: 'Завантаження PLaMo {p}%',
+    loadingPlamo: 'Запуск PLaMo',
+    plamoUnsupported: 'PLaMo не підтримує мову «{l}». Перемкніть переклад на Chrome.',
     stage: 'Субтитри',
     live: 'Триває переклад',
     pop: 'Окреме вікно',
@@ -1711,6 +1825,12 @@ const MAX_HOLD_MS = 8000;
 const HOLD_PER_WORD_MS = 280;
 const MAX_LAG_MS = 8000;
 const PIP_SIZE = { width: 720, height: 240 };
+const WLLAMA = 'https://cdn.jsdelivr.net/npm/@wllama/wllama@3.13.0/esm';
+const PLAMO_MODEL = { repo: 'pfnet/plamo-3-translate-0.8b-GGUF', file: 'plamo-3-translate-0.8b-Q4_K_M.gguf' };
+const PLAMO_LICENSE = 'https://plamo.preferredai.jp/info/plamo-community-license-';
+const PLAMO_CODES = { zh: 'zh-hans', 'zh-Hant': 'zh-hant' };
+const PLAMO_UNSUPPORTED = new Set(['pt', 'tr', 'uk']);
+const PLAMO_HISTORY = 2;
 const BREAK_AFTER = /^[、。，．,.!?！？;；:：]+$/;
 const NO_PIECE_START = /^[\s、。，．,.!?！？;；:：）」』]*/;
 
@@ -1720,6 +1840,8 @@ const $ = (id) => document.getElementById(id);
 const uiSel = $('uiLang'), shareLink = $('shareLink');
 const controls = $('controls'), srcSel = $('src'), tgtSel = $('tgt'), swapBtn = $('swap');
 const engineInputs = [...document.querySelectorAll('[name="engine"]')];
+const mtInputs = [...document.querySelectorAll('[name="mt"]')];
+const plamoLink = $('plamoLink');
 const stage = $('stage'), stageHome = $('stageHome'), pipNote = $('pipNote');
 const actionBtn = $('action'), actionLabel = $('actionLabel'), statusEl = $('status');
 const popBtn = $('pop'), unpopBtn = $('unpop'), clearBtn = $('clear');
@@ -1736,8 +1858,12 @@ let busy = false;
 let blocked = false;
 let checking = false;
 let checked = false;
-let pendingStep = null; // 'translator' | 'speech' | null
+let pendingStep = null; // 'translator' | 'plamo' | 'speech' | null
 let progress = null; // null when not downloading, 0..1, or 'indeterminate'
+let wllama = null;
+let plamoReady = false;
+let plamoCached = false;
+const plamoHistory = [];
 let checkId = 0;
 let networkErrors = 0;
 let session = 0;
@@ -1762,6 +1888,8 @@ let holdUntil = 0;
 const t = (key, vars = {}) => (I18N[ui][key] ?? I18N.en[key]).replace(/\{(\w+)\}/g, (_, name) => vars[name] ?? '');
 const htmlLang = (code) => (code === 'zh' ? 'zh-Hans' : code);
 const engine = () => engineInputs.find((input) => input.checked)?.value ?? 'cloud';
+const mt = () => mtInputs.find((input) => input.checked)?.value ?? 'chrome';
+const plamoCode = (code) => PLAMO_CODES[code] ?? code;
 const pair = () => ({ sourceLanguage: srcSel.value, targetLanguage: tgtSel.value });
 const locale = () => LOCALES.get(srcSel.value);
 const stageWindow = () => stage.ownerDocument.defaultView;
@@ -1798,6 +1926,7 @@ function applyLanguage(code) {
   }
   stage.setAttribute('aria-label', t('stage'));
   shareLink.href = `https://x.com/intent/tweet?text=${encodeURIComponent(t('title'))}&url=${encodeURIComponent(SHARE_URL)}`;
+  plamoLink.href = PLAMO_LICENSE + (code === 'ja' ? 'ja' : 'en');
   uiSel.value = code;
   if (supported) {
     nameLanguages();
@@ -1823,6 +1952,7 @@ function render() {
   const view = running ? 'live' : busy ? (progress === null ? 'starting' : 'download') : checked ? 'idle' : 'checking';
   stage.dataset.view = view;
   stage.dataset.engine = engine();
+  stage.dataset.mt = mt();
   stage.toggleAttribute('data-step', Boolean(pendingStep));
   stage.toggleAttribute('data-blocked', blocked);
   controls.disabled = running || busy;
@@ -1835,12 +1965,12 @@ function render() {
     label = t('starting');
   } else if (view === 'download') {
     icon = 'none';
-    label = typeof progress === 'number'
-      ? t('downloadingModel', { p: Math.floor(progress * 10) * 10 })
-      : t('downloadingSpeech');
+    const p = Math.floor(progress * 10) * 10;
+    if (pendingStep === 'plamo') label = typeof progress === 'number' ? t('downloadingPlamo', { p }) : t('loadingPlamo');
+    else label = typeof progress === 'number' ? t('downloadingModel', { p }) : t('downloadingSpeech');
   } else if (pendingStep) {
     icon = 'download';
-    label = t(pendingStep === 'speech' ? 'getSpeech' : 'getModel');
+    label = t({ speech: 'getSpeech', plamo: 'getPlamo', translator: 'getModel' }[pendingStep]);
   }
   actionBtn.dataset.icon = icon;
   actionLabel.textContent = label;
@@ -1859,18 +1989,26 @@ async function check() {
   let problem = null;
   let vars = {};
   let step = null;
+  const unsupported = mt() === 'plamo' && [srcSel.value, tgtSel.value].find((code) => PLAMO_UNSUPPORTED.has(code));
   if (srcSel.value === tgtSel.value) {
     problem = 'sameLang';
+  } else if (unsupported) {
+    problem = 'plamoUnsupported';
+    vars = { l: new Intl.DisplayNames([htmlLang(ui)], { type: 'language' }).of(unsupported) };
   } else {
     try {
-      const translation = translator ? 'available' : await Translator.availability(pair());
+      const translation = mt() === 'plamo'
+        ? plamoReady ? 'available' : (await isPlamoCached()) ? 'cached' : 'downloadable'
+        : translator ? 'available' : await Translator.availability(pair());
       const speech = engine() === 'local'
         ? await SR.available({ langs: [locale()], processLocally: true })
         : 'available';
       if (id !== checkId) return;
+      plamoCached = translation === 'cached';
       if (translation === 'unavailable') problem = 'pairUnavailable';
       else if (speech === 'unavailable') problem = 'localUnavailable';
-      else step = translation !== 'available' ? 'translator' : speech !== 'available' ? 'speech' : null;
+      else if (translation !== 'available') step = mt() === 'plamo' ? 'plamo' : 'translator';
+      else if (speech !== 'available') step = 'speech';
     } catch (e) {
       if (id !== checkId) return;
       problem = 'checkFailed';
@@ -1886,14 +2024,25 @@ async function check() {
   else if (step) setStatus('note', 'firstDownload');
   else setStatus('ready', 'ready');
   render();
+  // A model already saved in the browser loads without asking, since nothing is downloaded.
+  if (step === 'plamo' && plamoCached) prepare();
 }
 
 async function prepare() {
   busy = true;
-  progress = pendingStep === 'translator' ? 0 : 'indeterminate';
+  progress = pendingStep === 'speech' || (pendingStep === 'plamo' && plamoCached) ? 'indeterminate' : 0;
   render();
   try {
-    if (pendingStep === 'translator') {
+    if (pendingStep === 'plamo') {
+      setStatus('busy', plamoCached ? 'loadingPlamo' : 'downloadingPlamo', { p: 0 });
+      await loadPlamo((ratio) => {
+        if (plamoCached) return;
+        progress = ratio;
+        const p = Math.floor(ratio * 10) * 10;
+        if (status.vars.p !== p) setStatus('busy', 'downloadingPlamo', { p });
+        render();
+      });
+    } else if (pendingStep === 'translator') {
       setStatus('busy', 'preparingModel');
       translator = await Translator.create({
         ...pair(),
@@ -1959,7 +2108,11 @@ async function start() {
   track.addEventListener('ended', () => stop('ended', 'note'));
 
   try {
-    translator ??= await Translator.create(pair());
+    if (mt() === 'plamo') {
+      if (!plamoReady) await loadPlamo(() => {});
+    } else {
+      translator ??= await Translator.create(pair());
+    }
   } catch (e) {
     if (stream === current) stop('modelFailed', 'error', { e: e.message });
     return;
@@ -1968,6 +2121,7 @@ async function start() {
 
   busy = false;
   running = true;
+  plamoHistory.length = 0;
   session++;
   networkErrors = 0;
   startedAt = Date.now();
@@ -2196,16 +2350,71 @@ async function pump() {
     const job = finals.shift();
     let out = null;
     try {
-      out = await translator.translate(job.text);
+      out = await translateText(job.text);
     } catch {}
     job.done(out);
   }
   translating = false;
 }
 
+function translateText(text) {
+  return mt() === 'plamo' ? translateWithPlamo(text) : translator.translate(text);
+}
+
+async function getWllama() {
+  if (!wllama) {
+    const { Wllama } = await import(`${WLLAMA}/index.js`);
+    wllama = new Wllama({ default: `${WLLAMA}/wasm/wllama.wasm` }, { suppressNativeLog: true });
+  }
+  return wllama;
+}
+
+async function isPlamoCached() {
+  const entries = await (await getWllama()).cacheManager.list();
+  return entries.some((entry) => entry.name.endsWith(`_${PLAMO_MODEL.file}`));
+}
+
+async function loadPlamo(onProgress) {
+  const instance = await getWllama();
+  await instance.loadModelFromHF(PLAMO_MODEL, {
+    n_ctx: 4096,
+    progressCallback: ({ loaded, total }) => onProgress(total ? loaded / total : 0),
+  });
+  plamoReady = instance === wllama;
+}
+
+function unloadPlamo() {
+  const instance = wllama;
+  wllama = null;
+  plamoReady = false;
+  instance?.exit().catch(() => {});
+}
+
+// PFML3 prompt as rendered by the model's chat template; the last few pairs keep terms and tone consistent.
+async function translateWithPlamo(text) {
+  const source = plamoCode(srcSel.value);
+  const target = plamoCode(tgtSel.value);
+  const turn = (tag, lang, body) => `<|plamo:tag|>${tag}<|plamo:key|>lang<|plamo:val|>${lang}<|plamo:msg|>${body}`;
+  let prompt = '<|plamo:tag|>dataset<|plamo:msg|>translation';
+  for (const [input, output] of plamoHistory) prompt += turn('input', source, input) + turn('output', target, output);
+  prompt += turn('input', source, text) + turn('output', target, '');
+  const res = await wllama.createCompletion({
+    prompt,
+    max_tokens: 512,
+    temperature: 0,
+    stop: ['<|plamo:tag|>', '<|plamo:bos|>'],
+  });
+  const out = res.choices[0].text.trim();
+  if (!out) throw new Error('empty translation');
+  plamoHistory.push([text, out]);
+  if (plamoHistory.length > PLAMO_HISTORY) plamoHistory.shift();
+  return out;
+}
+
 function languageChanged() {
   translator?.destroy();
   translator = null;
+  plamoHistory.length = 0;
   capSrc.lang = srcSel.value;
   capTr.lang = tgtSel.value;
   savePrefs({ src: srcSel.value, tgt: tgtSel.value });
@@ -2242,6 +2451,7 @@ function initControls(prefs) {
   local.disabled = !SR.available;
   const chosen = local.disabled || prefs.engine === 'cloud' ? 'cloud' : 'local';
   engineInputs.find((input) => input.value === chosen).checked = true;
+  mtInputs.find((input) => input.value === (prefs.mt === 'plamo' ? 'plamo' : 'chrome')).checked = true;
 }
 
 async function popOut() {
@@ -2341,6 +2551,14 @@ if (supported) {
   for (const input of engineInputs) {
     input.addEventListener('change', () => {
       savePrefs({ engine: engine() });
+      check();
+    });
+  }
+  for (const input of mtInputs) {
+    input.addEventListener('change', () => {
+      savePrefs({ mt: mt() });
+      plamoHistory.length = 0;
+      if (mt() !== 'plamo') unloadPlamo();
       check();
     });
   }
