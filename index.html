@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tolk｜画面の音声を同時翻訳</title>
+<title>Tolk｜PC音声をローカルで同時翻訳</title>
 <meta name="description" content="共有した画面やタブの音声を聞き取り、字幕にして訳します。">
 <meta name="theme-color" content="#0c0c0e">
 <link rel="canonical" href="https://noxelwork.com/tolk">
@@ -11,7 +11,7 @@
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:url" content="https://noxelwork.com/tolk">
-<meta property="og:title" content="Tolk｜画面の音声を同時翻訳">
+<meta property="og:title" content="Tolk｜PC音声をローカルで同時翻訳">
 <meta property="og:description" content="共有した画面やタブの音声を聞き取り、字幕にして訳します。">
 <meta property="og:image" content="https://noxelwork.com/tolk/ogp.png">
 <meta property="og:image:width" content="1200">
@@ -461,7 +461,7 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
   <header>
     <hgroup>
       <h1><svg viewBox="0 0 64 64" aria-hidden="true"><rect x=".5" y=".5" width="63" height="63" rx="14" fill="#0b0b0c" stroke="#2c2c2f"/><rect x="12" y="34" width="40" height="7" rx="3.5" fill="#ffd84a"/><rect x="20" y="46" width="24" height="5" rx="2.5" fill="#a1a1a6"/></svg>Tolk</h1>
-      <p data-i18n="tagline">画面の音声を同時翻訳</p>
+      <p data-i18n="tagline">PC音声をローカルで同時翻訳</p>
     </hgroup>
     <div class="header-actions">
       <a id="shareLink" aria-label="X で共有" data-i18n-label="share" href="https://x.com/intent/tweet?text=Tolk%EF%BD%9C%E7%94%BB%E9%9D%A2%E3%81%AE%E9%9F%B3%E5%A3%B0%E3%82%92%E5%90%8C%E6%99%82%E7%BF%BB%E8%A8%B3&amp;url=https%3A%2F%2Fnoxelwork.com%2Ftolk" target="_blank" rel="noopener noreferrer"><svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span data-i18n="share">X で共有</span></a>
@@ -558,8 +558,8 @@ const LOCALES = new Map([
 const I18N = {
   ja: {
     name: '日本語',
-    title: 'Tolk｜画面の音声を同時翻訳',
-    tagline: '画面の音声を同時翻訳',
+    title: 'Tolk｜PC音声をローカルで同時翻訳',
+    tagline: 'PC音声をローカルで同時翻訳',
     uiLang: '表示言語',
     src: '話されている言語',
     tgt: '字幕の言語',
@@ -620,8 +620,8 @@ const I18N = {
   },
   en: {
     name: 'English',
-    title: 'Tolk | Translate screen audio into live subtitles',
-    tagline: 'Translate screen audio into live subtitles',
+    title: 'Tolk | Translate PC audio live, on your device',
+    tagline: 'Translate PC audio live, on your device',
     uiLang: 'Display language',
     src: 'Spoken language',
     tgt: 'Subtitle language',
@@ -682,8 +682,8 @@ const I18N = {
   },
   zh: {
     name: '简体中文',
-    title: 'Tolk｜将屏幕声音实时翻译成字幕',
-    tagline: '将屏幕声音实时翻译成字幕',
+    title: 'Tolk | 在本地实时翻译电脑声音',
+    tagline: '在本地实时翻译电脑声音',
     uiLang: '界面语言',
     src: '说话语言',
     tgt: '字幕语言',
@@ -744,8 +744,8 @@ const I18N = {
   },
   'zh-Hant': {
     name: '繁體中文',
-    title: 'Tolk｜將螢幕聲音即時翻譯成字幕',
-    tagline: '將螢幕聲音即時翻譯成字幕',
+    title: 'Tolk | 在本機即時翻譯電腦聲音',
+    tagline: '在本機即時翻譯電腦聲音',
     uiLang: '介面語言',
     src: '說話語言',
     tgt: '字幕語言',
@@ -806,8 +806,8 @@ const I18N = {
   },
   ko: {
     name: '한국어',
-    title: 'Tolk | 화면 소리를 실시간 자막으로 번역',
-    tagline: '화면 소리를 실시간 자막으로 번역',
+    title: 'Tolk | PC 소리를 기기에서 실시간 번역',
+    tagline: 'PC 소리를 기기에서 실시간 번역',
     uiLang: '표시 언어',
     src: '말하는 언어',
     tgt: '자막 언어',
@@ -868,8 +868,8 @@ const I18N = {
   },
   es: {
     name: 'Español',
-    title: 'Tolk | Traduce el audio de la pantalla a subtítulos en directo',
-    tagline: 'Traduce el audio de la pantalla a subtítulos en directo',
+    title: 'Tolk | Traduce el audio del PC en directo, en tu dispositivo',
+    tagline: 'Traduce el audio del PC en directo, en tu dispositivo',
     uiLang: 'Idioma de la interfaz',
     src: 'Idioma hablado',
     tgt: 'Idioma de los subtítulos',
@@ -930,8 +930,8 @@ const I18N = {
   },
   fr: {
     name: 'Français',
-    title: 'Tolk | Traduisez l’audio de l’écran en sous-titres en direct',
-    tagline: 'Traduisez l’audio de l’écran en sous-titres en direct',
+    title: 'Tolk | Traduisez l’audio du PC en direct, sur votre appareil',
+    tagline: 'Traduisez l’audio du PC en direct, sur votre appareil',
     uiLang: 'Langue de l’interface',
     src: 'Langue parlée',
     tgt: 'Langue des sous-titres',
@@ -992,8 +992,8 @@ const I18N = {
   },
   de: {
     name: 'Deutsch',
-    title: 'Tolk | Bildschirmton live als Untertitel übersetzen',
-    tagline: 'Bildschirmton live als Untertitel übersetzen',
+    title: 'Tolk | PC-Audio live übersetzen, direkt auf dem Gerät',
+    tagline: 'PC-Audio live übersetzen, direkt auf dem Gerät',
     uiLang: 'Anzeigesprache',
     src: 'Gesprochene Sprache',
     tgt: 'Untertitelsprache',
@@ -1054,8 +1054,8 @@ const I18N = {
   },
   it: {
     name: 'Italiano',
-    title: 'Tolk | Traduci l’audio dello schermo in sottotitoli dal vivo',
-    tagline: 'Traduci l’audio dello schermo in sottotitoli dal vivo',
+    title: 'Tolk | Traduci l’audio del PC dal vivo, sul tuo dispositivo',
+    tagline: 'Traduci l’audio del PC dal vivo, sul tuo dispositivo',
     uiLang: 'Lingua dell’interfaccia',
     src: 'Lingua parlata',
     tgt: 'Lingua dei sottotitoli',
@@ -1116,8 +1116,8 @@ const I18N = {
   },
   pt: {
     name: 'Português',
-    title: 'Tolk | Traduza o áudio da tela em legendas ao vivo',
-    tagline: 'Traduza o áudio da tela em legendas ao vivo',
+    title: 'Tolk | Traduza o áudio do PC ao vivo, no seu dispositivo',
+    tagline: 'Traduza o áudio do PC ao vivo, no seu dispositivo',
     uiLang: 'Idioma da interface',
     src: 'Idioma falado',
     tgt: 'Idioma das legendas',
@@ -1178,8 +1178,8 @@ const I18N = {
   },
   ru: {
     name: 'Русский',
-    title: 'Tolk | Перевод звука с экрана в субтитры в реальном времени',
-    tagline: 'Перевод звука с экрана в субтитры в реальном времени',
+    title: 'Tolk | Перевод звука с ПК в реальном времени прямо на устройстве',
+    tagline: 'Перевод звука с ПК в реальном времени прямо на устройстве',
     uiLang: 'Язык интерфейса',
     src: 'Язык речи',
     tgt: 'Язык субтитров',
@@ -1240,8 +1240,8 @@ const I18N = {
   },
   hi: {
     name: 'हिन्दी',
-    title: 'Tolk | स्क्रीन की आवाज़ को लाइव सबटाइटल में अनुवाद करें',
-    tagline: 'स्क्रीन की आवाज़ को लाइव सबटाइटल में अनुवाद करें',
+    title: 'Tolk | PC की आवाज़ का लाइव अनुवाद, आपके डिवाइस पर ही',
+    tagline: 'PC की आवाज़ का लाइव अनुवाद, आपके डिवाइस पर ही',
     uiLang: 'इंटरफ़ेस की भाषा',
     src: 'बोली जा रही भाषा',
     tgt: 'सबटाइटल की भाषा',
@@ -1302,8 +1302,8 @@ const I18N = {
   },
   id: {
     name: 'Bahasa Indonesia',
-    title: 'Tolk | Terjemahkan audio layar menjadi subtitle langsung',
-    tagline: 'Terjemahkan audio layar menjadi subtitle langsung',
+    title: 'Tolk | Terjemahkan audio PC secara langsung di perangkat Anda',
+    tagline: 'Terjemahkan audio PC secara langsung di perangkat Anda',
     uiLang: 'Bahasa tampilan',
     src: 'Bahasa yang diucapkan',
     tgt: 'Bahasa subtitle',
@@ -1364,8 +1364,8 @@ const I18N = {
   },
   vi: {
     name: 'Tiếng Việt',
-    title: 'Tolk | Dịch âm thanh trên màn hình thành phụ đề trực tiếp',
-    tagline: 'Dịch âm thanh trên màn hình thành phụ đề trực tiếp',
+    title: 'Tolk | Dịch trực tiếp âm thanh máy tính ngay trên thiết bị',
+    tagline: 'Dịch trực tiếp âm thanh máy tính ngay trên thiết bị',
     uiLang: 'Ngôn ngữ giao diện',
     src: 'Ngôn ngữ nói',
     tgt: 'Ngôn ngữ phụ đề',
@@ -1426,8 +1426,8 @@ const I18N = {
   },
   th: {
     name: 'ไทย',
-    title: 'Tolk | แปลเสียงบนหน้าจอเป็นคำบรรยายแบบสด',
-    tagline: 'แปลเสียงบนหน้าจอเป็นคำบรรยายแบบสด',
+    title: 'Tolk | แปลเสียงจากคอมพิวเตอร์แบบสดบนเครื่องของคุณ',
+    tagline: 'แปลเสียงจากคอมพิวเตอร์แบบสดบนเครื่องของคุณ',
     uiLang: 'ภาษาที่แสดง',
     src: 'ภาษาที่พูด',
     tgt: 'ภาษาคำบรรยาย',
@@ -1488,8 +1488,8 @@ const I18N = {
   },
   ar: {
     name: 'العربية',
-    title: 'Tolk | ترجم صوت الشاشة إلى ترجمة نصية مباشرة',
-    tagline: 'ترجم صوت الشاشة إلى ترجمة نصية مباشرة',
+    title: 'Tolk | ترجمة صوت الحاسوب مباشرةً على جهازك',
+    tagline: 'ترجمة صوت الحاسوب مباشرةً على جهازك',
     uiLang: 'لغة الواجهة',
     src: 'اللغة المنطوقة',
     tgt: 'لغة الترجمة النصية',
@@ -1550,8 +1550,8 @@ const I18N = {
   },
   tr: {
     name: 'Türkçe',
-    title: 'Tolk | Ekrandaki sesi canlı altyazıya çevir',
-    tagline: 'Ekrandaki sesi canlı altyazıya çevir',
+    title: 'Tolk | PC sesini cihazınızda canlı çevirin',
+    tagline: 'PC sesini cihazınızda canlı çevirin',
     uiLang: 'Arayüz dili',
     src: 'Konuşulan dil',
     tgt: 'Altyazı dili',
@@ -1612,8 +1612,8 @@ const I18N = {
   },
   nl: {
     name: 'Nederlands',
-    title: 'Tolk | Vertaal schermaudio naar live ondertiteling',
-    tagline: 'Vertaal schermaudio naar live ondertiteling',
+    title: 'Tolk | Vertaal pc-audio live, op je eigen apparaat',
+    tagline: 'Vertaal pc-audio live, op je eigen apparaat',
     uiLang: 'Weergavetaal',
     src: 'Gesproken taal',
     tgt: 'Ondertitelingstaal',
@@ -1674,8 +1674,8 @@ const I18N = {
   },
   pl: {
     name: 'Polski',
-    title: 'Tolk | Tłumacz dźwięk z ekranu na napisy na żywo',
-    tagline: 'Tłumacz dźwięk z ekranu na napisy na żywo',
+    title: 'Tolk | Tłumacz dźwięk z komputera na żywo, na swoim urządzeniu',
+    tagline: 'Tłumacz dźwięk z komputera na żywo, na swoim urządzeniu',
     uiLang: 'Język interfejsu',
     src: 'Język mówiony',
     tgt: 'Język napisów',
@@ -1736,8 +1736,8 @@ const I18N = {
   },
   uk: {
     name: 'Українська',
-    title: 'Tolk | Переклад звуку з екрана в субтитри наживо',
-    tagline: 'Переклад звуку з екрана в субтитри наживо',
+    title: 'Tolk | Переклад звуку з ПК наживо прямо на пристрої',
+    tagline: 'Переклад звуку з ПК наживо прямо на пристрої',
     uiLang: 'Мова інтерфейсу',
     src: 'Мова мовлення',
     tgt: 'Мова субтитрів',
