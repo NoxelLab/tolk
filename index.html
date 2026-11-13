@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>画面の音声を同時翻訳</title>
 <meta name="description" content="共有した画面やタブの音声を聞き取り、字幕にして訳します。">
-<meta name="theme-color" content="#E9EDF2">
+<meta name="theme-color" content="#141415">
 <link rel="canonical" href="https://noxelwork.com/scrn-translator">
 <link rel="icon" href="/scrn-translator/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
@@ -13,15 +13,15 @@
 <meta property="og:url" content="https://noxelwork.com/scrn-translator">
 <meta property="og:title" content="画面の音声を同時翻訳">
 <meta property="og:description" content="共有した画面やタブの音声を聞き取り、字幕にして訳します。">
-<meta property="og:image" content="https://noxelwork.com/scrn-translator/ogp.png">
+<meta property="og:image" content="https://noxelwork.com/scrn-translator/ogp.png?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="紺色の画面に黄色で表示された日本語の字幕と英語の原文">
+<meta property="og:image:alt" content="黒い画面に黄色で表示された日本語の字幕と英語の原文">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@NoxelLab">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600&display=swap">
 <script>
 if (!(window.SpeechRecognition || window.webkitSpeechRecognition) || !('Translator' in self) || !navigator.mediaDevices?.getDisplayMedia) {
   document.documentElement.classList.add('unsupported');
@@ -29,68 +29,74 @@ if (!(window.SpeechRecognition || window.webkitSpeechRecognition) || !('Translat
 </script>
 <style>
 :root {
-  --paper: #E9EDF2;
-  --field: #F7F9FB;
-  --ink: #1B2333;
-  --muted: #5E6880;
-  --line: #C9D1DD;
-  --screen: #171C2B;
-  --screen-text: #C7CEDD;
-  --subtitle: #FFD84A;
-  --live: #E5484D;
-  --error: #B4232A;
-  font-family: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, sans-serif;
-  font-weight: 500;
+  color-scheme: dark;
+  --page: #141415;
+  --screen: #0b0b0c;
+  --raised: #232325;
+  --raised-hover: #2c2c2f;
+  --line: rgb(237 237 237 / .08);
+  --line-strong: rgb(237 237 237 / .14);
+  --text: #ededed;
+  --text-2: #a1a1a6;
+  --muted: #85858b;
+  --subtitle: #ffd84a;
+  --live: #e5484d;
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  font-family: "IBM Plex Sans JP", system-ui, sans-serif;
   line-height: 1.6;
-  color: var(--ink);
+  color: var(--text);
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--paper); }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--page); }
 p, h1 { margin: 0; }
 button, select { font: inherit; color: inherit; }
-:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+:lang(zh) { font-family: system-ui, sans-serif; }
+:focus-visible { outline: 2px solid var(--subtitle); outline-offset: 2px; }
+.icon { width: 1.125rem; height: 1.125rem; flex: none; }
 
 main {
   max-width: 60rem;
   margin: 0 auto;
-  padding: 2rem 1.25rem 3rem;
+  padding: 1.5rem 1rem 3rem;
   display: grid;
-  gap: 1.25rem;
+  gap: 2rem;
 }
 
 header {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  gap: .25rem 1.5rem;
+  gap: .5rem 1.5rem;
 }
-h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
+h1 { display: flex; align-items: center; gap: .75rem; font-size: 1.375rem; font-weight: 500; line-height: 1.3; }
+h1 svg { flex: none; width: 1.75rem; height: 1.75rem; }
 
-#status { display: flex; align-items: center; gap: .5rem; font-size: .9375rem; }
+#status {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .875rem;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
 #status::before {
   content: "";
   flex: none;
-  width: .625rem;
-  height: .625rem;
+  width: .5rem;
+  height: .5rem;
   border-radius: 50%;
   background: var(--muted);
 }
-#status[data-state="busy"]::before { background: var(--ink); animation: pulse 1.2s ease-in-out infinite; }
+#status[data-state="busy"]::before { background: var(--text); animation: pulse 1.2s ease-in-out infinite; }
+#status[data-state="live"] { color: var(--text); }
 #status[data-state="live"]::before { background: var(--live); animation: pulse 1.6s ease-in-out infinite; }
-#status[data-state="error"] { color: var(--error); }
-#status[data-state="error"]::before { background: var(--error); }
-@keyframes pulse { 50% { opacity: .25; } }
+#status[data-state="error"] { color: var(--live); }
+#status[data-state="error"]::before { background: var(--live); }
+@keyframes pulse { 50% { opacity: .3; } }
 
-.notice, #hint, .caption { word-break: auto-phrase; }
-.notice {
-  padding: .75rem 1rem;
-  border: 2px solid var(--error);
-  border-radius: .5rem;
-  color: var(--error);
-}
-:root:not(.unsupported) .notice,
-.unsupported :is(#status, #controls, #stageHome, .log) { display: none; }
+.player { display: grid; gap: 1rem; }
 
 #controls {
   display: flex;
@@ -102,22 +108,56 @@ h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
   padding: 0;
   border: 0;
 }
-#controls label { display: grid; gap: .25rem; font-size: .8125rem; color: var(--muted); }
+#controls label { flex: 1 1 0; min-width: 7.5rem; display: grid; gap: .5rem; font-size: .75rem; color: var(--muted); }
+#controls label:last-of-type { flex-grow: 1.5; }
 #controls select,
-#controls button {
-  height: 2.75rem;
-  padding: 0 .875rem;
-  border: 1.5px solid var(--ink);
+#controls button,
+#pop,
+.links a,
+#clear { transition: background-color 150ms var(--ease), color 150ms var(--ease), transform 150ms var(--ease); }
+#controls select {
+  width: 100%;
+  height: 2.5rem;
+  padding: 0 2.25rem 0 .75rem;
+  border: 1px solid var(--line-strong);
   border-radius: .5rem;
-  background: var(--field);
-  font-size: 1rem;
-  color: var(--ink);
+  appearance: none;
+  background: var(--raised) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2385858b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right .75rem center / 1rem;
+  font-size: .9375rem;
+  color: var(--text);
+  cursor: pointer;
 }
-#controls button { cursor: pointer; }
-#controls :disabled { opacity: .5; cursor: not-allowed; }
-#controls #swap { width: 2.75rem; padding: 0; }
-#controls #action { margin-left: auto; background: var(--subtitle); font-weight: 700; }
-#controls #action[data-running] { background: var(--field); }
+#swap {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: .5rem;
+  background: var(--raised);
+  color: var(--text-2);
+  cursor: pointer;
+}
+#action {
+  flex: none;
+  height: 2.5rem;
+  padding: 0 1.25rem;
+  border: 1px solid transparent;
+  border-radius: .5rem;
+  background: var(--text);
+  font-size: .9375rem;
+  font-weight: 500;
+  color: var(--page);
+  cursor: pointer;
+}
+#action[data-running] { border-color: var(--line-strong); background: var(--raised); color: var(--text); }
+#controls select:hover:not(:disabled),
+#swap:hover:not(:disabled),
+#action[data-running]:hover:not(:disabled) { background-color: var(--raised-hover); }
+#action:not([data-running]):hover:not(:disabled) { background: #fff; }
+#controls button:active:not(:disabled) { transform: scale(.98); }
+#controls :disabled { opacity: .4; cursor: not-allowed; }
 
 .stage {
   position: relative;
@@ -125,123 +165,155 @@ h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
   flex-direction: column;
   justify-content: center;
   gap: .5rem;
-  min-height: clamp(14rem, 40vh, 24rem);
-  padding: 3.5rem 2rem;
-  border-radius: .75rem;
+  aspect-ratio: 2.39 / 1;
+  padding: 3rem 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
   background: var(--screen);
-  color: var(--screen-text);
+  color: var(--text-2);
   text-align: center;
 }
+.notice, #hint, .caption, .sample { word-break: auto-phrase; }
 .caption {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   overflow: hidden;
 }
-#capTr {
-  min-height: 2.8em;
-  justify-content: center;
+.tr {
   font-size: clamp(1.375rem, 3.2vw, 2.25rem);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.4;
   color: var(--subtitle);
-  text-shadow: 0 2px 0 rgb(0 0 0 / .55);
+  text-shadow: 0 2px 4px rgb(0 0 0 / .6);
+  text-wrap: balance;
 }
-#capTr p { text-wrap: balance; animation: appear .2s ease-out; }
+.src { font-size: 1rem; color: var(--text-2); }
+#capTr { min-height: 2.8em; justify-content: center; }
+#capTr p { animation: appear 200ms var(--ease); }
 @keyframes appear { from { opacity: 0; } }
-#capSrc { height: 3.2em; font-size: 1rem; }
-#hint { margin: auto; max-width: 30rem; }
+#capSrc { height: 3.2em; }
+#hint { margin: auto; max-width: 30rem; font-size: .9375rem; }
 #hint:not([hidden]) ~ .caption { display: none; }
+.sample { display: grid; gap: .5rem; }
 #pop {
   position: absolute;
   top: .75rem;
   right: .75rem;
-  padding: .25rem .75rem;
-  border: 1px solid rgb(255 255 255 / .35);
-  border-radius: .5rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  height: 2rem;
+  padding: 0 .75rem;
+  border: 1px solid var(--line-strong);
+  border-radius: .375rem;
   background: none;
   font-size: .8125rem;
-  color: var(--screen-text);
+  color: var(--text-2);
   cursor: pointer;
 }
-#pop:focus-visible { outline-color: var(--subtitle); }
+#pop .icon { width: 1rem; height: 1rem; }
+#pop:hover { background: var(--raised); color: var(--text); }
 
 .pip { background: var(--screen); }
-.pip .stage { height: 100vh; min-height: 0; padding: 1.25rem; border-radius: 0; }
+.pip .stage { aspect-ratio: auto; height: 100vh; padding: 1.25rem; border: 0; border-radius: 0; }
 .pip #pop { display: none; }
 
-.links { display: flex; justify-content: flex-end; gap: .5rem; margin-top: -.5rem; }
+.notice { font-size: .9375rem; text-align: center; }
+:root:not(.unsupported) :is(.notice, .sample),
+.unsupported :is(#status, #controls, #hint, .caption, .log) { display: none; }
+
+.links { display: flex; justify-content: flex-end; gap: .5rem; }
+.unsupported .links { justify-content: center; }
 .links a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 2.5rem;
+  height: 2.25rem;
   padding: 0 1rem;
-  border: 1.5px solid var(--ink);
+  border: 1px solid var(--line-strong);
   border-radius: .5rem;
-  background: var(--field);
-  font-size: .9375rem;
-  color: var(--ink);
+  font-size: .875rem;
+  color: var(--text-2);
   text-decoration: none;
 }
-.unsupported .links { margin-top: 0; }
+.links a:hover { background: var(--raised); color: var(--text); }
 
-.log { border-top: 2px solid var(--ink); }
+.log { border-top: 1px solid var(--line); }
 .log:has(#log:empty) { display: none; }
 .log-head, #log li { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem 1.5rem; }
-.log-head { align-items: center; padding: .5rem 0; font-size: .8125rem; color: var(--muted); }
+.log-head { align-items: center; padding: .75rem 0; font-size: .75rem; color: var(--muted); }
 .log-head div { display: flex; align-items: center; justify-content: space-between; }
-#clear { padding: .125rem .625rem; border: 1px solid var(--muted); border-radius: .375rem; background: none; cursor: pointer; }
+#clear {
+  height: 1.75rem;
+  padding: 0 .75rem;
+  border: 1px solid var(--line-strong);
+  border-radius: .375rem;
+  background: none;
+  font-size: .75rem;
+  color: var(--text-2);
+  cursor: pointer;
+}
+#clear:hover { background: var(--raised); color: var(--text); }
 #log { max-height: 22rem; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
-#log li { padding: .625rem 0; border-top: 1px solid var(--line); }
-#log li p:first-child { color: var(--muted); }
+#log li { padding: .75rem 0; border-top: 1px solid var(--line); font-size: .9375rem; }
+#log li p:first-child { color: var(--text-2); }
 
+@media (min-width: 40rem) {
+  main { padding: 2rem 2rem 4rem; }
+}
 @media (max-width: 40rem) {
-  #action { margin-left: 0; flex: 1 1 100%; }
-  .links a { flex: 1; }
+  #action { flex: 1 1 100%; }
+  .links a { flex: 1; height: 2.75rem; }
   .log-head, #log li { grid-template-columns: 1fr; }
   .log-head span { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  #status::before { animation: none !important; }
-  #capTr p { animation: none; }
+  #status::before, #capTr p { animation: none !important; }
+  * { transition: none !important; }
 }
 </style>
 </head>
 <body>
 <main>
   <header>
-    <h1>画面の音声を同時翻訳</h1>
+    <h1><svg viewBox="0 0 64 64" aria-hidden="true"><rect x=".5" y=".5" width="63" height="63" rx="14" fill="#0b0b0c" stroke="#2c2c2f"/><rect x="12" y="34" width="40" height="7" rx="3.5" fill="#ffd84a"/><rect x="20" y="46" width="24" height="5" rx="2.5" fill="#a1a1a6"/></svg>画面の音声を同時翻訳</h1>
     <p id="status" role="status" data-state="idle"></p>
   </header>
 
-  <p class="notice">パソコン版 Chrome の最新版で開いてください。</p>
+  <div class="player">
+    <fieldset id="controls">
+      <label>話されている言語<select id="src"></select></label>
+      <button id="swap" type="button" aria-label="言語を入れ替える"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg></button>
+      <label>字幕の言語<select id="tgt"></select></label>
+      <label>音声認識
+        <select id="engine">
+          <option value="local">端末内（外部に送信しない）</option>
+          <option value="cloud">クラウド（音声を Google に送信）</option>
+        </select>
+      </label>
+      <button id="action" type="button">画面を選んで翻訳を始める</button>
+    </fieldset>
 
-  <fieldset id="controls">
-    <label>話されている言語<select id="src"></select></label>
-    <button id="swap" type="button" aria-label="言語を入れ替える">⇄</button>
-    <label>字幕の言語<select id="tgt"></select></label>
-    <label>音声認識
-      <select id="engine">
-        <option value="local">端末内(外部に送信しない)</option>
-        <option value="cloud">クラウド(音声を Google に送信)</option>
-      </select>
-    </label>
-    <button id="action" type="button">画面を選んで翻訳を始める</button>
-  </fieldset>
+    <div id="stageHome">
+      <section id="stage" class="stage" aria-label="字幕">
+        <button id="pop" type="button" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"/><rect width="10" height="7" x="12" y="13" rx="2"/></svg>字幕を小窓に出す</button>
+        <p id="hint">共有ダイアログで「音声も共有する」をオンにしてください</p>
+        <div id="capTr" class="caption tr"></div>
+        <div id="capSrc" class="caption src"></div>
+        <div class="sample" aria-hidden="true">
+          <p class="tr">新しい機能を見ていきましょう</p>
+          <p class="src" lang="en">Let's take a look at the new features</p>
+        </div>
+      </section>
+    </div>
 
-  <div id="stageHome">
-    <section id="stage" class="stage" aria-label="字幕">
-      <button id="pop" type="button" hidden>字幕を小窓に出す</button>
-      <p id="hint">共有ダイアログで「音声も共有する」をオンにしてください。</p>
-      <div id="capTr" class="caption"></div>
-      <div id="capSrc" class="caption"></div>
-    </section>
-  </div>
+    <p class="notice">パソコン版 Chrome の最新版で開いてください</p>
 
-  <div class="links">
-    <a href="https://x.com/intent/tweet?text=%E7%94%BB%E9%9D%A2%E3%81%AE%E9%9F%B3%E5%A3%B0%E3%82%92%E5%90%8C%E6%99%82%E7%BF%BB%E8%A8%B3&amp;url=https%3A%2F%2Fnoxelwork.com%2Fscrn-translator" target="_blank" rel="noopener noreferrer">X で共有</a>
-    <a href="https://x.com/NoxelLab" target="_blank" rel="noopener noreferrer">作者X</a>
+    <div class="links">
+      <a href="https://x.com/intent/tweet?text=%E7%94%BB%E9%9D%A2%E3%81%AE%E9%9F%B3%E5%A3%B0%E3%82%92%E5%90%8C%E6%99%82%E7%BF%BB%E8%A8%B3&amp;url=https%3A%2F%2Fnoxelwork.com%2Fscrn-translator" target="_blank" rel="noopener noreferrer">X で共有</a>
+      <a href="https://x.com/NoxelLab" target="_blank" rel="noopener noreferrer">作者X</a>
+    </div>
   </div>
 
   <section class="log" aria-label="翻訳の履歴">
@@ -261,10 +333,10 @@ const LOCALES = new Map([
   ['ar', 'ar-SA'], ['tr', 'tr-TR'], ['nl', 'nl-NL'], ['pl', 'pl-PL'], ['uk', 'uk-UA'],
 ]);
 const FATAL_ERRORS = {
-  'not-allowed': '音声認識が許可されていません。',
+  'not-allowed': '音声認識が許可されていません',
   'service-not-allowed': 'この音声認識は利用できません。音声認識の方式を切り替えてください。',
-  'language-not-supported': 'この言語の音声認識には対応していません。',
-  'audio-capture': '共有した画面から音声を取得できませんでした。',
+  'language-not-supported': 'この言語の音声認識には対応していません',
+  'audio-capture': '共有した画面から音声を取得できませんでした',
 };
 const STORAGE_KEY = 'screen-translator.v2';
 const RESTART_DELAY_MS = 250;
@@ -330,7 +402,7 @@ async function check() {
 
   let problem = null;
   if (srcSel.value === tgtSel.value) {
-    problem = '話されている言語と字幕の言語を別々に選んでください。';
+    problem = '話されている言語と字幕の言語を別々に選んでください';
   } else {
     try {
       const translation = translator ? 'available' : await Translator.availability(pair());
@@ -338,18 +410,18 @@ async function check() {
         ? await SR.available({ langs: [locale()], processLocally: true })
         : 'available';
       if (id !== checkId) return;
-      if (translation === 'unavailable') problem = 'この言語の組み合わせは翻訳できません。';
+      if (translation === 'unavailable') problem = 'この言語の組み合わせは翻訳できません';
       else if (speech === 'unavailable') problem = 'この言語は端末内の音声認識に対応していません。クラウドに切り替えてください。';
       else pendingStep = translation !== 'available' ? 'translator' : speech !== 'available' ? 'speech' : null;
     } catch (e) {
       if (id !== checkId) return;
-      problem = `対応状況を確認できませんでした(${e.message})`;
+      problem = `対応状況を確認できませんでした（${e.message}）`;
     }
   }
 
   blocked = Boolean(problem);
   if (problem) setStatus('error', problem);
-  else setStatus('idle', pendingStep ? '初回のみモデルのダウンロードが必要です。' : '準備ができました。');
+  else setStatus('idle', pendingStep ? '初回のみモデルのダウンロードが必要です' : '準備ができました');
   renderAction();
 }
 
@@ -375,7 +447,7 @@ async function prepare() {
     }
   } catch (e) {
     busy = false;
-    setStatus('error', `準備に失敗しました(${e.message})`);
+    setStatus('error', `準備に失敗しました（${e.message}）`);
     renderAction();
     return;
   }
@@ -394,8 +466,8 @@ async function start() {
       selfBrowserSurface: 'exclude',
     });
   } catch (e) {
-    if (e.name === 'NotAllowedError') stop('画面の共有をキャンセルしました。');
-    else stop(`画面を共有できませんでした(${e.message})`, 'error');
+    if (e.name === 'NotAllowedError') stop('画面の共有をキャンセルしました');
+    else stop(`画面を共有できませんでした（${e.message}）`, 'error');
     return;
   }
 
@@ -406,12 +478,12 @@ async function start() {
     return;
   }
   stream.getVideoTracks().forEach((t) => t.stop());
-  track.addEventListener('ended', () => stop('画面の共有が終わりました。'));
+  track.addEventListener('ended', () => stop('画面の共有が終わりました'));
 
   try {
     translator ??= await Translator.create(pair());
   } catch (e) {
-    if (stream === current) stop(`翻訳モデルを読み込めませんでした(${e.message})`, 'error');
+    if (stream === current) stop(`翻訳モデルを読み込めませんでした（${e.message}）`, 'error');
     return;
   }
   if (stream !== current) return;
@@ -425,7 +497,7 @@ async function start() {
   listen(track);
 }
 
-function stop(text = '翻訳を止めました。', state = 'idle') {
+function stop(text = '翻訳を止めました', state = 'idle') {
   running = false;
   busy = false;
   recognition?.abort();
@@ -449,7 +521,7 @@ function listen(track) {
     try {
       rec.start(track);
     } catch (e) {
-      stop(`音声認識を始められませんでした(${e.message})`, 'error');
+      stop(`音声認識を始められませんでした（${e.message}）`, 'error');
     }
   };
 
@@ -562,7 +634,7 @@ function commit(text) {
   finals.push({
     text,
     done(out) {
-      translated.textContent = out ?? '(翻訳できませんでした)';
+      translated.textContent = out ?? '（翻訳できませんでした）';
       if (out !== null) queueCaption(out);
     },
   });
@@ -636,7 +708,7 @@ async function popOut() {
     pip.document.body.append(stage);
     pip.addEventListener('pagehide', () => stageHome.append(stage));
   } catch (e) {
-    setStatus('error', `小窓を開けませんでした(${e.message})`);
+    setStatus('error', `小窓を開けませんでした（${e.message}）`);
   }
 }
 
