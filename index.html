@@ -209,7 +209,8 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
 .stage:not([data-view="live"]) > #action { display: inline-flex; }
 .stage[data-view="checking"] > #action { opacity: 0; pointer-events: none; }
 .stage:is([data-view="idle"], [data-view="starting"]):not([data-step], [data-blocked]) > #hint { display: flex; }
-.stage[data-view="live"] > :is(.bar, .caption) { display: flex; }
+.stage[data-view="live"] > .bar { display: grid; }
+.stage[data-view="live"] > .caption { display: flex; }
 .stage[data-view="live"]:has(#capTr:empty):has(#capSrc:empty) > .caption { display: none; }
 .stage[data-view="live"]:has(#capTr:empty):has(#capSrc:empty) > #waiting { display: block; }
 .unsupported .stage > #action { display: none; }
@@ -283,8 +284,9 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
 #plamoNote a { font-size: .875rem; color: var(--muted); text-underline-offset: .2em; }
 #plamoNote a:hover { color: var(--text); }
 
-.bar { position: absolute; inset: 0 0 auto; align-items: center; justify-content: space-between; gap: .75rem; padding: .75rem; }
+.bar { position: absolute; inset: 0 0 auto; grid-template-columns: 1fr minmax(0, auto) 1fr; align-items: center; gap: .75rem; padding: .75rem; }
 .live {
+  justify-self: start;
   display: flex;
   align-items: center;
   gap: .5rem;
@@ -301,13 +303,9 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
 .live .dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--live); animation: beat 1.6s ease-out infinite; }
 @keyframes beat { from { box-shadow: 0 0 0 0 rgb(255 92 94 / .6); } to { box-shadow: 0 0 0 .5rem rgb(255 92 94 / 0); } }
 #clock { color: rgb(255 255 255 / .8); }
-.meter { display: flex; align-items: center; gap: 2px; height: .875rem; margin-inline-start: .125rem; }
-.meter i { width: 3px; height: 100%; border-radius: 2px; background: currentColor; transform: scaleY(calc(.35 + var(--level, 0) * var(--k))); transition: transform 80ms linear; }
-.meter i:nth-child(1) { --k: .4; }
-.meter i:nth-child(2) { --k: .65; }
-.meter i:nth-child(3) { --k: .5; }
-.meter i:nth-child(4) { --k: .3; }
-.bar-actions { display: flex; gap: .5rem; }
+.wave { display: flex; align-items: center; justify-content: flex-end; gap: 2px; height: 1.75rem; overflow: hidden; }
+.wave i { flex: none; width: 3px; height: 100%; border-radius: 2px; background: var(--text); transform: scaleY(.1); }
+.bar-actions { justify-self: end; display: flex; gap: .5rem; }
 .bar button,
 .pip-note button {
   display: inline-flex;
@@ -501,7 +499,8 @@ hgroup p { font-size: 1rem; color: var(--text-2); }
     <div id="stageHome">
       <section id="stage" class="stage" aria-label="字幕" data-i18n-label="stage" data-view="checking">
         <div class="bar">
-          <p class="live" aria-hidden="true"><span class="dot"></span><span data-i18n="live">翻訳中</span><span id="clock">0:00</span><span id="meter" class="meter"><i></i><i></i><i></i><i></i></span></p>
+          <p class="live" aria-hidden="true"><span class="dot"></span><span data-i18n="live">翻訳中</span><span id="clock">0:00</span></p>
+          <div id="wave" class="wave" aria-hidden="true"></div>
           <div class="bar-actions">
             <button id="pop" type="button" aria-label="小窓で表示" data-i18n-label="pop" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"/><rect width="10" height="7" x="12" y="13" rx="2"/></svg><span data-i18n="pop">小窓で表示</span></button>
             <button id="stop" type="button" aria-label="停止" data-i18n-label="stop"><svg class="icon icon-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor"/></svg><span data-i18n="stop">停止</span></button>
@@ -1839,7 +1838,7 @@ const plamoLink = $('plamoLink');
 const stage = $('stage'), stageHome = $('stageHome'), pipNote = $('pipNote');
 const actionBtn = $('action'), actionLabel = $('actionLabel'), statusEl = $('status');
 const popBtn = $('pop'), unpopBtn = $('unpop'), clearBtn = $('clear');
-const capTr = $('capTr'), capSrc = $('capSrc'), logEl = $('log'), clockEl = $('clock'), meterEl = $('meter');
+const capTr = $('capTr'), capSrc = $('capSrc'), logEl = $('log'), clockEl = $('clock'), waveEl = $('wave');
 const demoTr = $('demoTr'), demoSrc = $('demoSrc');
 
 let ui = 'ja';
@@ -2205,6 +2204,10 @@ function listen(track) {
   begin();
 }
 
+const WAVE_BARS = 32;
+const WAVE_STEP_MS = 60;
+const waveBars = Array.from({ length: WAVE_BARS }, () => waveEl.appendChild(document.createElement('i')));
+
 function startMeter(track) {
   try {
     analyser = audioCtx.createAnalyser();
@@ -2218,10 +2221,13 @@ function startMeter(track) {
 }
 
 // Runs on the window that currently shows the stage, so a visible picture-in-picture window keeps it going.
+// The waveform scrolls the loudest level of each step in from the end, so silence shows as a flat line.
 function runMeter() {
   const token = ++meterToken;
   const samples = analyser && new Float32Array(analyser.fftSize);
-  let level = 0;
+  const levels = new Array(WAVE_BARS).fill(0);
+  let peak = 0;
+  let stepAt = 0;
   let shown = '';
   const tick = () => {
     if (token !== meterToken) return;
@@ -2229,8 +2235,14 @@ function runMeter() {
       analyser.getFloatTimeDomainData(samples);
       let sum = 0;
       for (const v of samples) sum += v * v;
-      level = Math.max(Math.min(1, Math.sqrt(Math.sqrt(sum / samples.length)) * 1.6), level * .9);
-      meterEl.style.setProperty('--level', level.toFixed(2));
+      peak = Math.max(peak, Math.min(1, Math.sqrt(Math.sqrt(sum / samples.length)) * 1.6));
+      if (Date.now() - stepAt >= WAVE_STEP_MS) {
+        stepAt = Date.now();
+        levels.shift();
+        levels.push(peak);
+        peak = 0;
+        levels.forEach((level, i) => { waveBars[i].style.transform = `scaleY(${Math.max(.1, level).toFixed(2)})`; });
+      }
     }
     const seconds = Math.floor((Date.now() - startedAt) / 1000);
     const text = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
@@ -2245,7 +2257,7 @@ function stopMeter() {
   meterSource?.disconnect();
   meterSource = null;
   analyser = null;
-  meterEl.style.removeProperty('--level');
+  for (const bar of waveBars) bar.style.removeProperty('transform');
   audioCtx?.suspend().catch(() => {});
 }
 
