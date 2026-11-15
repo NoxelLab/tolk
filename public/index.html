@@ -102,6 +102,7 @@ if (!(window.SpeechRecognition || window.webkitSpeechRecognition) || !('Translat
             <label><input type="radio" name="engine" value="chrome">Chrome</label>
             <label><input type="radio" name="engine" value="whisper">Whisper</label>
           </div>
+          <label id="speakersToggle" class="toggle" hidden><input id="speakers" type="checkbox" role="switch"><span data-i18n="speakers">話者を色分け</span></label>
         </div>
         <div class="engine" role="radiogroup" aria-labelledby="mtLabel">
           <span id="mtLabel" data-i18n="translation">翻訳</span>

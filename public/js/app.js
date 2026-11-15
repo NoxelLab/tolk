@@ -30,6 +30,7 @@ const uiSel = $('uiLang'), shareLink = $('shareLink');
 const controls = $('controls'), srcSel = $('src'), tgtSel = $('tgt'), swapBtn = $('swap');
 const engineInputs = [...document.querySelectorAll('[name="engine"]')];
 const mtInputs = [...document.querySelectorAll('[name="mt"]')];
+const speakersInput = $('speakers'), speakersToggle = $('speakersToggle');
 const plamoLink = $('plamoLink');
 const stage = $('stage'), stageHome = $('stageHome'), pipNote = $('pipNote');
 const actionBtn = $('action'), actionLabel = $('actionLabel'), statusEl = $('status');
@@ -47,10 +48,9 @@ let busy = false;
 let blocked = false;
 let checking = false;
 let checked = false;
-let pendingStep = null; // 'translator' | 'plamo' | 'speech' | 'whisper' | null
+let pendingStep = null; // 'translator' | 'plamo' | 'speech' | 'whisper' | 'speakers' | null
 let progress = null; // null when not downloading, 0..1, or 'indeterminate'
-let plamoCached = false;
-let whisperCached = false;
+let stepCached = false; // whether the model of pendingStep is saved in the browser
 let lastSrc = 'en'; // the spoken language last chosen by hand
 let checkId = 0;
 let session = 0;
@@ -66,8 +66,9 @@ let demoToken = 0;
 const finals = [];
 let translating = false;
 let liveSrc = null;
-const captions = [];
+const captions = []; // { text, speaker }
 let captionRest = '';
+let captionSpeaker = null;
 let captionTimer = null;
 let captionWin = window;
 let holdUntil = 0;
@@ -77,6 +78,13 @@ const htmlLang = (code) => (code === 'zh' ? 'zh-Hans' : code);
 const auto = () => srcSel.value === 'auto';
 const engine = () => engineInputs.find((input) => input.checked)?.value ?? 'chrome';
 const mt = () => mtInputs.find((input) => input.checked)?.value ?? 'chrome';
+const speakers = () => engine() === 'whisper' && speakersInput.checked;
+// Models that Tolk downloads itself, with the suffix of their status strings.
+const MODELS = {
+  plamo: { load: plamo.load, name: 'Plamo' },
+  whisper: { load: whisper.load, name: 'Whisper' },
+  speakers: { load: whisper.loadSpeakers, name: 'Speakers' },
+};
 // With automatic detection, the language last chosen is the likeliest, so its model is the one prepared before starting.
 const pair = () => {
   const target = tgtSel.value;
@@ -154,6 +162,7 @@ function render() {
   controls.disabled = running || busy;
   swapBtn.disabled = auto();
   srcSel.options[0].hidden = engine() !== 'whisper';
+  speakersToggle.hidden = engine() !== 'whisper';
   actionBtn.disabled = busy || blocked;
 
   let icon = 'share';
@@ -164,12 +173,12 @@ function render() {
   } else if (view === 'download') {
     icon = 'none';
     const p = Math.floor(progress * 10) * 10;
-    if (pendingStep === 'plamo') label = typeof progress === 'number' ? t('downloadingPlamo', { p }) : t('loadingPlamo');
-    else if (pendingStep === 'whisper') label = typeof progress === 'number' ? t('downloadingWhisper', { p }) : t('loadingWhisper');
+    const model = MODELS[pendingStep];
+    if (model) label = typeof progress === 'number' ? t(`downloading${model.name}`, { p }) : t(`loading${model.name}`);
     else label = typeof progress === 'number' ? t('downloadingModel', { p }) : t('downloadingSpeech');
   } else if (pendingStep) {
     icon = 'download';
-    label = t({ speech: 'getSpeech', whisper: 'getWhisper', plamo: 'getPlamo', translator: 'getModel' }[pendingStep]);
+    label = t(MODELS[pendingStep] ? `get${MODELS[pendingStep].name}` : { speech: 'getSpeech', translator: 'getModel' }[pendingStep]);
   }
   actionBtn.dataset.icon = icon;
   actionLabel.textContent = label;
@@ -202,14 +211,15 @@ async function check() {
       const speech = engine() === 'whisper'
         ? !(await whisper.hasWebGpu()) ? 'nogpu' : whisper.ready ? 'available' : (await whisper.isCached()) ? 'cached' : 'downloadable'
         : await SR.available({ langs: [locale()], processLocally: true });
+      const speakerModel = !speakers() || whisper.speakersReady ? 'available' : (await whisper.speakersCached()) ? 'cached' : 'downloadable';
       if (id !== checkId) return;
-      plamoCached = translation === 'cached';
-      whisperCached = speech === 'cached';
       if (translation === 'unavailable') problem = 'pairUnavailable';
       else if (speech === 'nogpu') problem = 'whisperNoGpu';
       else if (speech === 'unavailable') problem = 'localUnavailable';
       else if (translation !== 'available') step = mt() === 'plamo' ? 'plamo' : 'translator';
       else if (speech !== 'available') step = engine() === 'whisper' ? 'whisper' : 'speech';
+      else if (speakerModel !== 'available') step = 'speakers';
+      stepCached = { plamo: translation, whisper: speech, speakers: speakerModel }[step] === 'cached';
     } catch (e) {
       if (id !== checkId) return;
       problem = 'checkFailed';
@@ -226,31 +236,23 @@ async function check() {
   else setStatus('ready', 'ready');
   render();
   // A model already saved in the browser loads without asking, since nothing is downloaded.
-  if ((step === 'plamo' && plamoCached) || (step === 'whisper' && whisperCached)) prepare();
+  if (MODELS[step] && stepCached) prepare();
 }
 
 async function prepare() {
   busy = true;
-  const cached = (pendingStep === 'plamo' && plamoCached) || (pendingStep === 'whisper' && whisperCached);
+  const model = MODELS[pendingStep];
+  const cached = Boolean(model) && stepCached;
   progress = pendingStep === 'speech' || cached ? 'indeterminate' : 0;
   render();
   try {
-    if (pendingStep === 'plamo') {
-      setStatus('busy', plamoCached ? 'loadingPlamo' : 'downloadingPlamo', { p: 0 });
-      await plamo.load((ratio) => {
-        if (plamoCached) return;
+    if (model) {
+      setStatus('busy', `${cached ? 'loading' : 'downloading'}${model.name}`, { p: 0 });
+      await model.load((ratio) => {
+        if (cached) return;
         progress = ratio;
         const p = Math.floor(ratio * 10) * 10;
-        if (status.vars.p !== p) setStatus('busy', 'downloadingPlamo', { p });
-        render();
-      });
-    } else if (pendingStep === 'whisper') {
-      setStatus('busy', whisperCached ? 'loadingWhisper' : 'downloadingWhisper', { p: 0 });
-      await whisper.load((ratio) => {
-        if (whisperCached) return;
-        progress = ratio;
-        const p = Math.floor(ratio * 10) * 10;
-        if (status.vars.p !== p) setStatus('busy', 'downloadingWhisper', { p });
+        if (status.vars.p !== p) setStatus('busy', `downloading${model.name}`, { p });
         render();
       });
     } else if (pendingStep === 'translator') {
@@ -326,6 +328,7 @@ async function start() {
       translators.set(pair().sourceLanguage, await Translator.create(pair()));
     }
     if (engine() === 'whisper' && !whisper.ready) await whisper.load(() => {});
+    if (speakers() && !whisper.speakersReady) await whisper.loadSpeakers(() => {});
   } catch (e) {
     if (stream === current) stop('modelFailed', 'error', { e: e.message });
     return;
@@ -341,8 +344,8 @@ async function start() {
   startMeter(track);
   render();
   if (engine() === 'whisper') {
-    whisper.listen(audioCtx, track, auto() ? null : srcSel.value, (text, language) => {
-      if (running) commit(text, language);
+    whisper.listen(audioCtx, track, auto() ? null : srcSel.value, speakers(), (text, language, speaker) => {
+      if (running) commit(text, language, speaker);
     }).catch((e) => stop('srFailed', 'error', { e: e.message }));
   } else listen(track);
 }
@@ -466,9 +469,14 @@ function showSource(text) {
 }
 
 const wordsOf = (text) => new Intl.Segmenter(tgtSel.value, { granularity: 'word' }).segment(text);
+// The speaker's number picks the color of the line beside the text.
+const markSpeaker = (el, speaker) => {
+  if (speaker != null) el.dataset.speaker = speaker;
+};
 
-function splitCaption(text) {
+function splitCaption(text, speaker) {
   const probe = document.createElement('p');
+  markSpeaker(probe, speaker);
   probe.style.cssText = `position: absolute; visibility: hidden; width: ${capTr.clientWidth}px`;
   capTr.append(probe);
   probe.textContent = 'あ';
@@ -495,8 +503,8 @@ function splitCaption(text) {
   return [text.slice(0, end).trim(), rest];
 }
 
-function queueCaption(text) {
-  captions.push(text);
+function queueCaption(text, speaker) {
+  captions.push({ text, speaker });
   scheduleCaption();
 }
 
@@ -520,12 +528,14 @@ function cancelCaptionTimer() {
 
 function showCaption() {
   captionTimer = null;
-  while (captions.length > 1 && readTime(`${captionRest} ${captions.join(' ')}`) > MAX_LAG_MS) captions.shift();
-  const [chunk, rest] = splitCaption(captionRest || captions.shift());
+  while (captions.length > 1 && readTime(`${captionRest} ${captions.map((c) => c.text).join(' ')}`) > MAX_LAG_MS) captions.shift();
+  if (!captionRest) ({ text: captionRest, speaker: captionSpeaker } = captions.shift());
+  const [chunk, rest] = splitCaption(captionRest, captionSpeaker);
   captionRest = rest;
   const line = document.createElement('p');
   line.dir = 'auto';
   line.textContent = chunk;
+  markSpeaker(line, captionSpeaker);
   capTr.replaceChildren(line);
   holdUntil = Date.now() + Math.min(MAX_HOLD_MS, Math.max(MIN_HOLD_MS, readTime(chunk)));
   scheduleCaption();
@@ -535,16 +545,18 @@ function clearCaptions() {
   cancelCaptionTimer();
   captions.length = 0;
   captionRest = '';
+  captionSpeaker = null;
   holdUntil = 0;
   liveSrc = null;
   capTr.replaceChildren();
   capSrc.replaceChildren();
 }
 
-function commit(text, language = srcSel.value) {
+function commit(text, language = srcSel.value, speaker = null) {
   if (!text) return;
   showSource(text);
   liveSrc.lang = language;
+  markSpeaker(liveSrc, speaker);
   liveSrc = null;
 
   const item = document.createElement('li');
@@ -556,6 +568,7 @@ function commit(text, language = srcSel.value) {
   source.textContent = text;
   translated.className = 'pending';
   item.append(source, translated);
+  markSpeaker(item, speaker);
   const pinned = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 40;
   logEl.append(item);
   if (pinned) logEl.scrollTop = logEl.scrollHeight;
@@ -567,7 +580,7 @@ function commit(text, language = srcSel.value) {
     done(out) {
       translated.classList.remove('pending');
       translated.textContent = out ?? t('untranslated');
-      if (out !== null && running && id === session) queueCaption(out);
+      if (out !== null && running && id === session) queueCaption(out, speaker);
     },
   });
   pump();
@@ -643,6 +656,7 @@ function initControls(prefs) {
   capSrc.lang = auto() ? '' : srcSel.value;
   capTr.lang = tgtSel.value;
   mtInputs.find((input) => input.value === (prefs.mt === 'plamo' ? 'plamo' : 'chrome')).checked = true;
+  speakersInput.checked = prefs.speakers === true;
 }
 
 async function popOut() {
@@ -760,6 +774,11 @@ if (supported) {
       check();
     });
   }
+  speakersInput.addEventListener('change', () => {
+    savePrefs({ speakers: speakersInput.checked });
+    if (!speakersInput.checked) whisper.unloadSpeakers();
+    check();
+  });
   swapBtn.addEventListener('click', () => {
     [srcSel.value, tgtSel.value] = [tgtSel.value, srcSel.value];
     swapBtn.toggleAttribute('data-flip');

@@ -31,9 +31,14 @@ PCの音をブラウザだけで同時翻訳する Web アプリ
 | 音声認識 | Whisper | Whisper large-v3-turbo（transformers.js、WebGPU）と、発話を区切る Silero VAD。初回に約 560MB をダウンロード |
 | 翻訳 | Chrome | Chrome に内蔵された端末内の翻訳（Translator API） |
 | 翻訳 | PLaMo | PLaMo 3 Translate 0.8B（wllama、WebGPU または WASM）。初回に約 570MB をダウンロード |
+| 話者の色分け | Nemotron | Nemotron 3 Diarization（transformers.js、WebGPU）。初回に約 73MB をダウンロード |
 
 Whisper を選ぶと、話されている言語は「自動 (マルチ同時)」になります。\
 発話ごとに言語を判定するため、複数の言語が交互に話される音声にも対応します。（1つの発話の中で言語が切り替わる場合は、どちらか1つの言語として扱います）
+
+Whisper では「話者を色分け」をオンにすると、字幕と履歴の左端の線が話者ごとの色になります。\
+発話の途中で話者が替わった際は、そこで区切ってから文字起こしします。\
+話者には話し始めた順に番号が付き、最大8人まで区別することが可能です。
 
 翻訳が Chrome の場合、モデルのダウンロードにはクリックが必要です。\
 そのため翻訳中に初めて出てきた言語は、ブラウザにモデルがあるときだけ訳します。
@@ -57,6 +62,7 @@ Whisper を使うには WebGPU が必要です。
 - `public/js/i18n.js`：20 の表示言語の文言
 - `public/js/plamo.js`：PLaMo の読み込みと翻訳
 - `public/js/whisper.js`、`public/js/whisper-worker.js`、`public/js/capture-worklet.js`：Whisper のための音声の取り込みと文字起こし
+- `public/js/diarizer.js`、`public/js/speaker-cache.js`：Nemotron 3 Diarization による話者の分類
 - `dev.mjs`：手元で確かめるためのサーバー
 
 ### 開発
@@ -85,10 +91,13 @@ MIT（[LICENSE](LICENSE)）
 | PLaMo 3 Translate 0.8B（Preferred Networks） | [PLaMo コミュニティライセンス契約](https://plamo.preferredai.jp/info/plamo-community-license-ja)（Built with PLaMo） |
 | Whisper large-v3-turbo（OpenAI） | MIT |
 | Silero VAD | MIT |
+| Nemotron 3 Diarization（NVIDIA） | OpenMDW-1.1 |
 | transformers.js | Apache-2.0 |
 | ONNX Runtime Web | MIT |
 | wllama | MIT |
 | Lucide のアイコン | ISC（Feather に由来するものは MIT。表記は `public/index.html` の先頭） |
+
+`public/js/speaker-cache.js` は [nemotron-diarization-web](https://github.com/khawjaahmad/nemotron-diarization-web) の話者キャッシュを移植したもので、MIT ライセンスです。（表記はファイルの先頭）
 
 ### 自分のサービスとして公開する場合
 
@@ -125,8 +134,11 @@ When a model needs downloading, the start button turns into a download button. L
 | Speech recognition | Whisper | Whisper large-v3-turbo (transformers.js, WebGPU) with Silero VAD to cut utterances. About 560 MB on first use |
 | Translation | Chrome | Chrome's built-in on-device translation (Translator API) |
 | Translation | PLaMo | PLaMo 3 Translate 0.8B (wllama, WebGPU or WASM). About 570 MB on first use |
+| Speaker colors | Nemotron | Nemotron 3 Diarization (transformers.js, WebGPU). About 73 MB on first use |
 
 With Whisper, the spoken language defaults to automatic detection. The language is detected per utterance, so audio that alternates between languages works (an utterance that switches language mid-way is treated as one language).
+
+With Whisper, turning on "Color by speaker" colors the line beside each subtitle and history entry by speaker. An utterance in which the speaker changes is cut there before it is transcribed. Speakers are numbered in the order they first speak, and up to eight can be told apart.
 
 With Chrome translation, downloading a model needs a click, so a language first heard mid-session is translated only if its model is already in the browser.
 
@@ -146,6 +158,7 @@ Currently only desktop Chrome works. Browsers without the Translator API or on-d
 - `public/js/i18n.js`: strings for the 20 display languages
 - `public/js/plamo.js`: loading PLaMo and translating with it
 - `public/js/whisper.js`, `public/js/whisper-worker.js`, `public/js/capture-worklet.js`: capturing audio for Whisper and transcribing it
+- `public/js/diarizer.js`, `public/js/speaker-cache.js`: telling speakers apart with Nemotron 3 Diarization
 - `dev.mjs`: local server
 
 ### Development
@@ -171,10 +184,13 @@ Models and libraries fetched at runtime keep their own licenses:
 | PLaMo 3 Translate 0.8B (Preferred Networks) | [PLaMo Community License Agreement](https://plamo.preferredai.jp/info/plamo-community-license-en) (Built with PLaMo) |
 | Whisper large-v3-turbo (OpenAI) | MIT |
 | Silero VAD | MIT |
+| Nemotron 3 Diarization (NVIDIA) | OpenMDW-1.1 |
 | transformers.js | Apache-2.0 |
 | ONNX Runtime Web | MIT |
 | wllama | MIT |
 | Lucide icons | ISC (icons derived from Feather are MIT; notices at the top of `public/index.html`) |
+
+`public/js/speaker-cache.js` is ported from the speaker cache of [nemotron-diarization-web](https://github.com/khawjaahmad/nemotron-diarization-web) and is under the MIT License (notice at the top of the file).
 
 ### Running it as your own service
 

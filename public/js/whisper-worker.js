@@ -1,5 +1,7 @@
 // Silero VAD cuts the shared audio into utterances and Whisper transcribes each one, as in transformers.js's moonshine-web example.
+// With speakers told apart, each utterance is first cut where the speaker changes.
 import { AutoModel, LogitsProcessorList, Tensor, pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2/+esm';
+import { Diarizer } from './diarizer.js';
 
 const RATE = 16000;
 const FRAME = 512;
@@ -8,7 +10,8 @@ const MIN_SILENCE = 400 * 16;
 const MIN_SPEECH = 250 * 16;
 const MAX_SAMPLES = 12 * RATE;
 const MAX_PREV = Math.ceil(PAD / FRAME);
-const EXPECTED_BYTES = 566e6;
+const WHISPER_BYTES = 566e6;
+const SPEAKER_BYTES = 73.5e6;
 const MAX_CHARS_PER_SECOND = 40;
 const NOISE = /^(ご視聴ありがとうございました|ご清聴ありがとうございました|チャンネル登録(をお願いします|よろしくお願いします)?|thanks? (you )?(so much )?for watching|subtitles by .*)[.!。！]*$/i;
 
@@ -17,13 +20,15 @@ const buffer = new Float32Array(MAX_SAMPLES);
 const queue = [];
 let vad = null;
 let asr = null;
-let loading = null;
+let diarizer = null;
+const loads = new Map(); // the loads started, by part: 'whisper' or 'speakers'
 let chain = Promise.resolve();
 let state = null;
 let active = false;
 let draining = false;
 let session = 0;
 let language = null;
+let diarizing = false;
 let pointer = 0;
 let recording = false;
 let postSpeech = 0;
@@ -80,11 +85,23 @@ function dispatch(overflow) {
   prev = [];
   reset(overflow);
   const id = session;
+  if (!diarizing) {
+    transcribe(audio, null, id);
+    return;
+  }
+  const speakers = diarizer;
+  run(() => speakers.turns(audio)).then((turns) => {
+    if (id !== session) return;
+    for (const { start, end, speaker } of turns) transcribe(audio.subarray(start, end), speaker, id);
+  }, () => transcribe(audio, null, id));
+}
+
+function transcribe(audio, speaker, id) {
   const detected = {};
   run(() => asr(audio, language ? { language, task: 'transcribe' } : detecting(detected))).then(({ text }) => {
     const clean = text.trim();
     if (!clean || NOISE.test(clean) || clean.length > (audio.length / RATE) * MAX_CHARS_PER_SECOND) return;
-    self.postMessage({ type: 'text', text: clean, language: detected.language, session: id });
+    self.postMessage({ type: 'text', text: clean, language: detected.language, speaker, session: id });
   }).catch(() => {});
 }
 
@@ -133,15 +150,19 @@ async function drain() {
   draining = false;
 }
 
-async function load(model) {
+function reporter(expectedBytes) {
   const files = new Map();
-  const progress_callback = (p) => {
+  return (p) => {
     if (p.status !== 'progress') return;
     files.set(p.file, p.loaded);
     let loaded = 0;
     for (const n of files.values()) loaded += n;
-    self.postMessage({ type: 'progress', ratio: Math.min(1, loaded / EXPECTED_BYTES) });
+    self.postMessage({ type: 'progress', ratio: Math.min(1, loaded / expectedBytes) });
   };
+}
+
+async function load(model) {
+  const progress_callback = reporter(WHISPER_BYTES);
   vad = await AutoModel.from_pretrained('onnx-community/silero-vad', { config: { model_type: 'custom' }, dtype: 'fp32', progress_callback });
   asr = await pipeline('automatic-speech-recognition', model, {
     device: 'webgpu',
@@ -151,18 +172,38 @@ async function load(model) {
   await asr(new Float32Array(RATE), { language: 'en', task: 'transcribe' });
 }
 
+// The 4-bit graph decides the same speakers as the float32 one at a fifth of its size.
+async function loadSpeakers(model) {
+  const options = { config: { model_type: 'custom' }, device: 'webgpu', dtype: 'q4f16', use_external_data_format: true };
+  diarizer = new Diarizer(await AutoModel.from_pretrained(model, { ...options, progress_callback: reporter(SPEAKER_BYTES) }), Tensor);
+}
+
+const loaders = { whisper: load, speakers: loadSpeakers };
+
 self.onmessage = async ({ data }) => {
   if (data.type === 'load') {
+    if (!loads.has(data.part)) loads.set(data.part, loaders[data.part](data.model));
     try {
-      await (loading ??= load(data.model));
-      self.postMessage({ type: 'ready' });
+      await loads.get(data.part);
+      self.postMessage({ type: 'ready', part: data.part });
     } catch (e) {
-      loading = null;
+      loads.delete(data.part);
       self.postMessage({ type: 'error', message: e?.message ?? String(e) });
     }
+  } else if (data.type === 'unloadSpeakers') {
+    const unloaded = diarizer;
+    diarizer = null;
+    loads.delete('speakers');
+    run(() => unloaded?.model.dispose());
   } else if (data.type === 'start') {
     session = data.session;
     language = data.language;
+    diarizing = Boolean(data.speakers && diarizer);
+    // Queued behind the last session's utterances, so none of them reach the new session's speakers.
+    if (diarizing) {
+      const speakers = diarizer;
+      run(() => speakers.reset());
+    }
     state = new Tensor('float32', new Float32Array(2 * 128), [2, 1, 128]);
     prev = [];
     queue.length = 0;
