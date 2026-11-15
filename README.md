@@ -90,6 +90,16 @@ MIT（[LICENSE](LICENSE)）
 | wllama | MIT |
 | Lucide のアイコン | ISC（Feather に由来するものは MIT。表記は `public/index.html` の先頭） |
 
+### 自分のサービスとして公開する場合
+
+このリポジトリを使って自分のサービスとして公開する際は、PLaMo の利用が PLaMo コミュニティライセンス契約の「商業目的」に当たります。（サービスの提供を目的とした使用も商業目的に含まれます）\
+公開する前に PFN の[公式登録ページ](https://forms.gle/mTL8tBLrMYXKNZD56)で登録してください。\
+登録して利用できるのは、直近の事業年度の売上が10億円以下の場合です。（超える場合は PFN から別途商用ライセンスを取得する必要があります）\
+「Built with PLaMo」の表示とライセンス契約へのリンクも残してください。
+
+現時点のライセンス（2026年11月9日改定）に基づく内容です。\
+ライセンスは改定されることがあるため、公開する前に最新の本文を確認してください。
+
 ## English
 
 A web app that translates your PC's audio live, in the browser alone.
@@ -165,3 +175,9 @@ Models and libraries fetched at runtime keep their own licenses:
 | ONNX Runtime Web | MIT |
 | wllama | MIT |
 | Lucide icons | ISC (icons derived from Feather are MIT; notices at the top of `public/index.html`) |
+
+### Running it as your own service
+
+If you publish this as your own service, using PLaMo is a "commercial purpose" under the PLaMo Community License Agreement, which includes use for providing a service. Register on PFN's [official registration page](https://forms.gle/mTL8tBLrMYXKNZD56) before publishing. Registered use is allowed only if your revenue in the latest fiscal year is 1 billion yen or less; above that, you need a separate commercial license from PFN. Keep the "Built with PLaMo" notice and the link to the license agreement.
+
+This reflects the license as revised on November 9, 2026. It may change, so check the latest text before publishing.
