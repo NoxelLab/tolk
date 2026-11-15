@@ -2,7 +2,7 @@
 
 [日本語](#日本語) | [English](#english)
 
-![Tolk のロゴと「PCの音をブラウザだけで同時翻訳」「ローカルで動作し登録も不要」の文字](public/ogp.png)
+![英語の配信の音声を Whisper で文字起こしし、PLaMo で日本語の字幕に訳している Tolk の画面](assets/screenshot.png)
 
 ## 日本語
 
